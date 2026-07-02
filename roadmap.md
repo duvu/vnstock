@@ -1,104 +1,104 @@
-# vnstock Roadmap — Data-Only Market Data Layer
+# vnstock Roadmap — Data Collection Foundation
 
-> Goal: make `vnstock` a first-class data extraction library for algo-trading and quantitative finance on Vietnamese and global markets.
-> Architecture constraint: data extraction only, flat/open access, no user registration, no broker execution.
+> Goal: make `vnstock` a reliable **data extraction, validation, provider-diagnostics, and ingestion foundation** for Vietnamese and global market data research.
+>
+> Architecture constraint: **data-only**. No broker execution, no order placement, no account/portfolio APIs, no trading bots, no recommendation engine.
+
+---
+
+## Codebase Review — 2026-07-02
+
+Current codebase already contains the first data-foundation layers:
+
+- Unified UI over `Market`, `Reference`, `Fundamental`, and `Retail`
+- KBS/VCI/DNSE support for core Vietnamese equity market paths
+- cache layer with memory/SQLite backend
+- data quality layer for OHLCV, price board, and intraday trades
+- provider hardening layer with capability registry, drift detection, OHLCV comparison, health scoring, and matrix support
+- provider contract fixtures/tests
+- live smoke test scaffold gated by `VNSTOCK_LIVE_TESTS`
+- CI for Ruff, format check, offline pytest, and build
+
+The next priority is not scanner logic. The next priority is making data collection reliable, observable, and reproducible.
 
 ---
 
 ## Current State
 
-### Implemented / In Progress
+### Implemented Foundation
 
 | Area | Status | Notes |
 |---|---:|---|
-| Data-only package boundary | Done | Non-data APIs are being removed/deprecated from the package scope. |
-| DNSE provider | Done | Adds OHLCV, price board, and intraday coverage as a third Vietnam market provider. |
-| Cache layer | Done | In-process / SQLite cache with TTL controls. Needs live-data TTL discipline. |
-| Provider router | Done | Round-robin and failover foundation. Health-aware routing still needs correction/follow-up. |
-| Data quality layer | Implemented, needs correctness fixes | Core validators exist but edge cases need fixing before production use. |
-| Provider hardening layer | Implemented, needs correctness fixes | Core models/tests exist but type contracts and invalid-input guards need fixing. |
-| CI | Done | Ruff, format, pytest, build across Python 3.10–3.13. |
+| Data-only package boundary | Done | Non-data APIs should remain outside core package. |
+| Unified UI | Done | Main entrypoints are `Market`, `Reference`, `Fundamental`, `Retail`. |
+| DNSE provider | Done | Adds OHLCV and price board coverage; intraday support is constrained. |
+| Cache layer | Done | Memory/SQLite cache exists. Live-data TTL discipline still needs explicit policy. |
+| Provider router | Partial | Round-robin + cooldown exists. Health-aware routing is not yet integrated. |
+| Data quality layer | Done for market data | OHLCV, price board, intraday validators exist. Reference/fundamental contracts remain future work. |
+| Provider hardening | Partial | Capability registry, contract tests, drift detection, health scoring, matrix, and OHLCV comparison exist. Expansion still needed. |
+| Live smoke tests | Partial | Tests exist and are env-gated. A dedicated scheduled/manual workflow is not yet wired. |
+| CI | Done for offline suite | Ruff, format, pytest, build. Live tests are outside default CI. |
+| Foreign investor data | Partial | Snapshot/session fields exist in price board; historical time-series is not implemented. |
 
 ### Market Data Capabilities
 
-| Capability | Providers | Notes |
+| Capability | Providers | Status / Notes |
 |---|---|---|
-| OHLCV history 1m–1M | KBS, VCI, DNSE, MSN, FMP | KBS/DNSE native intervals; VCI may resample some intervals. |
-| Multi-symbol price board | KBS, VCI, DNSE | VCI has richer bid/ask depth; KBS has 3-level BBO. |
-| Intraday tick tape today-only | KBS, VCI, DNSE | Historical tick replay still not available. |
-| Match type classification | KBS, VCI, DNSE | Needs standardized contract and provider comparison. |
-| Foreign flow session total | KBS, DNSE | Session totals only; time-series still missing. |
-| Put-through trades session total | KBS | Negotiated block trade qty/value. |
-| Open interest snapshot | KBS derivatives | Today only; no history. |
-| Forex/crypto OHLCV | MSN, FMP | Global market support, not Vietnam-specific. |
-| Vietnam sector/index OHLCV | VCI, KBS | VCI broader sector index coverage. |
-| Fundamental/company data | KBS, VCI, FMarket | Needs quality contracts later. |
+| OHLCV history 1m–1M | KBS, VCI, DNSE, MSN, FMP | Core capability available. Needs batch API and stronger comparison. |
+| Multi-symbol price board | KBS, VCI, DNSE | Available. Contains foreign investor snapshot fields where provider returns them. |
+| Intraday tick tape today-only | KBS, VCI, DNSE | Available where provider supports it. Historical tick replay still missing. |
+| Foreign investor snapshot | KBS primarily; DNSE/VCI to verify | Fields include `foreign_buy_volume`, `foreign_sell_volume`, `foreign_room` where available. |
+| Historical foreign flow | Not implemented | Needs endpoint discovery, schema, fixtures, quality contract. |
+| Put-through session total | KBS | Available as session data, not a full analytical dataset yet. |
+| Open interest snapshot | KBS derivatives | Snapshot only. Historical OI remains investigation item. |
+| Vietnam sector/index OHLCV | VCI, KBS | Available. Historical index membership still needs work. |
+| Fundamental/company data | KBS, VCI, FMarket | Available but not yet covered by quality contracts. |
+| SSI provider | Not implemented | FastConnect Data is official but credentialed; iBoard public API needs discovery. |
+| ABS provider | Not implemented | Public priceboard is only a discovery candidate. |
 
-### Known Risks
+### Remaining Risks
 
 | Risk | Impact | Roadmap Response |
 |---|---|---|
-| Quality validation can be skipped despite global env config | Users may think validation is active when it is not | Phase 0 correctness fix |
-| Validators assume integer index labels | Real OHLCV DataFrames with `DatetimeIndex` can crash validation | Phase 0 correctness fix |
-| Internal validation errors may be swallowed silently | Bad data may pass downstream without diagnostics | Phase 0 correctness fix |
-| Freshness metadata may be serialized as string | Freshness check can crash on `df.attrs["fetched_at"]` | Phase 0 correctness fix |
-| Provider hardening type mismatches | Static analysis and downstream consumers see inconsistent API | Phase 0 correctness fix |
-| Contract tests may skip on adapter drift | CI may miss broken provider interfaces | Phase 0 correctness fix |
-| Live endpoint compatibility not tested by default | Fixture tests can pass while real provider APIs drift | Phase 1 live smoke checks |
+| Router does not consume provider health | Runtime may still select degraded providers until failure occurs | Phase 1 |
+| Live smoke tests are manual only | Provider API drift may not be detected operationally | Phase 1 |
+| `compare_ohlcv()` is OHLCV-only | Price board/intraday provider disagreements are not yet measurable | Phase 1 |
+| No first-class rate limiter | Batch scans can hit provider limits | Phase 2 |
+| No batch result envelope | Full-market scans cannot report partial failures cleanly | Phase 2 |
+| Cache can mask stale live data | Intraday/price board collection may consume stale data | Phase 2 |
+| No raw archive | Provider schema changes cannot be replayed/reparsed easily | Phase 2 |
+| No persistent storage/sync | Reproducibility and auditability are limited | Phase 3 |
+| Reference/fundamental validators are missing | Non-price data remains less safe | Phase 5 |
 
 ---
 
-## Updated Roadmap
+## Roadmap
 
-## Phase 0 — Correctness Stabilization Gate
+## Phase 0 — Foundation Stabilization
 
-**Goal:** make the newly added data quality and provider hardening layers safe enough to depend on.
+**Status:** mostly complete.
 
-**Status:** Required before any new feature work.
+Completed:
 
-### 0.1 Fix global quality config
+- data-only boundary
+- global quality config honored by dispatch
+- index-safe validation issue reporting
+- internal validation failure diagnostics
+- freshness datetime coercion
+- provider model type fixes
+- provider drift invalid-input guard
+- provider comparison invalid-input guard
+- offline provider contract tests
+- live smoke test scaffold
 
-- `VNSTOCK_QUALITY_ENABLED=true` must enable validation without requiring per-call `validate=True`.
-- `VNSTOCK_QUALITY_MODE` must be used when `quality_mode` is not supplied.
-- Explicit call kwargs must override global config.
+Remaining polish:
 
-### 0.2 Make validators index-safe
+- add explicit required-column preflight in `compare_ohlcv()` before accessing `time`, `close`, or `volume`
+- remove unused internal accumulators in comparison code if they remain unused
+- resolve stale doc references and old upstream marketing copy
+- ensure docs describe current capabilities rather than planned capabilities
 
-- Remove all unsafe `row_index=int(idx)` patterns.
-- Store `row_index` as 0-based positional offset.
-- Store original index label in `context["index_label"]` when useful.
-- Add regression tests for `DatetimeIndex`, string index, and non-default indexes.
-
-### 0.3 Make validation failures observable
-
-- Do not silently swallow unexpected validation exceptions.
-- In warn mode, attach a synthetic report with `QUALITY_VALIDATION_INTERNAL_ERROR`.
-- In strict mode, raise or wrap the internal validation error.
-
-### 0.4 Harden freshness and timezone handling
-
-- Parse `fetched_at` when it is a string.
-- Normalize freshness comparisons to UTC-aware datetimes.
-- Convert timezone-aware intraday timestamps to `Asia/Ho_Chi_Minh` before session validation.
-
-### 0.5 Fix provider type contracts
-
-- `ProviderComparisonReport.issues` must be `list[ProviderIssue]`.
-- `score_health(..., capabilities_checked=...)` must use `list[str]`, not `int`.
-- Ensure serialization works for all provider models.
-
-### 0.6 Add provider invalid-input guards
-
-- `detect_drift(None, ...)` should return `DRIFT_INVALID_INPUT`, not crash.
-- `compare_ohlcv()` should return `COMPARE_INVALID_INPUT` for invalid input.
-- Missing required OHLCV columns should produce a structured issue.
-
-### 0.7 Make contract tests fail on adapter drift
-
-- Remove broad `try/except Exception: pytest.skip(...)` from offline provider contract tests.
-- Offline contract tests should fail when provider module path or method signature changes.
-
-### Exit Criteria
+Exit criteria:
 
 ```bash
 ruff check .
@@ -108,75 +108,92 @@ PYTHONPATH=. pytest tests/unit/core/quality tests/unit/core/provider tests/contr
 python -m build --sdist --wheel --no-isolation
 ```
 
-No unresolved high-priority review findings should remain.
-
 ---
 
-## Phase 1 — Provider Hardening Completion
+## Phase 1 — Provider Reliability Completion
 
 **Goal:** make providers interchangeable with measurable reliability.
 
-**Depends on:** Phase 0.
+### 1.1 Health-aware routing / diagnostics
 
-### 1.1 Provider contract fixture coverage
+Current router is round-robin with cooldown. Next step:
 
-- Expand fixture coverage for KBS, VCI, DNSE.
-- Include edge fixtures:
-  - empty but valid response
-  - suspended symbol
-  - newly listed symbol
-  - holiday/no trading day
-  - partial intraday session
-  - missing optional fields
+- prefer healthy providers
+- use degraded providers as fallback
+- skip failing providers unless `source=` is forced
+- expose provider diagnostics in `df.attrs` or batch result metadata
+- keep cooldown behavior for runtime failures and rate limits
 
-### 1.2 Live smoke tests
+### 1.2 Live smoke workflow
 
-- Add opt-in live smoke tests gated by env vars:
+Live tests exist but need operational workflow support:
 
 ```bash
-VNSTOCK_LIVE_TESTS=true
-VNSTOCK_LIVE_PROVIDERS=DNSE,KBS,VCI
-VNSTOCK_LIVE_SYMBOLS=FPT,VCB,TCB
+VNSTOCK_LIVE_TESTS=true PYTHONPATH=. pytest tests/live/providers -m live --tb=short
 ```
 
-- Keep live tests out of normal CI.
-- Add manual or scheduled workflow for live provider compatibility checks.
+Add separate workflow:
+
+- `workflow_dispatch`
+- optional schedule
+- provider/symbol filters
+- artifact/report with provider status
+- not required for normal PR merge
 
 ### 1.3 Cross-provider comparison expansion
 
-Current comparison focuses on OHLCV. Expand to:
+Current comparison supports OHLCV. Add:
 
-- price board snapshots
-- intraday trades
-- foreign flow session totals where available
+- price board comparison
+- intraday trade shape comparison
+- provider-specific tolerance profiles
+- price-scale detection
+- coverage/freshness comparison
 
-### 1.4 Health-aware router
+### 1.4 Contract fixture expansion
 
-- Router should prefer healthy providers.
-- Degraded providers should be fallback-only.
-- Failing providers should be skipped unless caller explicitly forces source.
+Add edge fixtures:
 
-### Exit Criteria
+- empty but valid response
+- invalid symbol
+- suspended symbol
+- newly listed symbol
+- non-trading day
+- partial intraday session
+- missing optional fields
+- unexpected extra fields
 
-- Provider capability matrix generated.
-- Contract tests pass offline.
-- Live smoke tests can be run manually without changing code.
-- Router behavior is covered by tests.
+Exit criteria:
+
+- provider matrix reflects capabilities and testability
+- offline fixtures cover core edge cases
+- live smoke workflow can be run manually
+- router behavior is tested with healthy/degraded/failing providers
 
 ---
 
-## Phase 2 — Batch and Rate-Limit Foundations
+## Phase 2 — Ingestion Runtime
 
-**Goal:** support full-market scans without uncontrolled provider calls.
+**Goal:** support safe full-market collection without uncontrolled provider calls.
 
-**Depends on:** Phase 0 and core parts of Phase 1.
+### 2.1 Rate limiter
 
-### 2.1 Rate-limit / throttle manager
+Add provider-scoped throttling:
 
-- Add provider-scoped token bucket or sliding-window rate limiter.
-- Support memory backend first.
-- Add Redis backend later if multiple workers are needed.
-- Config via `VNSTOCK_RATE_LIMIT_*`.
+- in-memory token bucket or sliding-window limiter first
+- per-provider/per-endpoint config
+- 429 handling with cooldown integration
+- jittered retry/backoff
+- metrics hooks: request count, latency, error count, throttle count
+
+Suggested env config:
+
+```bash
+VNSTOCK_RATE_LIMIT_ENABLED=true
+VNSTOCK_RATE_LIMIT_KBS_PER_MINUTE=60
+VNSTOCK_RATE_LIMIT_VCI_PER_MINUTE=60
+VNSTOCK_RATE_LIMIT_DNSE_PER_MINUTE=60
+```
 
 ### 2.2 Batch OHLCV API
 
@@ -185,8 +202,8 @@ Target API:
 ```python
 result = Market().equity().history_batch(
     symbols=["FPT", "VCB", "TCB"],
-    start="2025-01-01",
-    end="2026-07-02",
+    start="2024-01-01",
+    end="2024-06-30",
     interval="1D",
     source="auto",
     validate=True,
@@ -194,86 +211,61 @@ result = Market().equity().history_batch(
 )
 ```
 
-Return should include:
+Return a structured envelope:
 
-- data by symbol
-- per-symbol errors
-- provider used
-- validation summary
-- retry/fallback summary
+```python
+@dataclass
+class BatchResult:
+    data: dict[str, pd.DataFrame]
+    errors: dict[str, Exception | str]
+    quality: dict[str, ValidationReport]
+    provider_used: dict[str, str]
+    diagnostics: dict[str, Any]
+```
 
-### 2.3 Multi-day intraday OHLCV chunker
+### 2.3 Raw response archive
 
-- Auto-split long intraday date ranges into provider-safe windows.
-- Stitch results and de-duplicate timestamps.
-- Attach validation and provider diagnostics.
+Persist raw provider responses before normalization:
 
-### Exit Criteria
+```text
+raw/provider=KBS/dataset=ohlcv/symbol=FPT/date=2026-07-02.json
+normalized/provider=KBS/dataset=ohlcv/symbol=FPT/interval=1D.parquet
+```
 
-- Full-market daily OHLCV scan can run with bounded provider calls.
-- Partial failures are reported without crashing entire batch.
-- Quality reports are available per symbol.
+This allows reparse/revalidation when provider schema changes.
 
----
+### 2.4 Cache policy for live vs historical data
 
-## Phase 3 — Scanner Data Readiness
+| Data type | Default cache policy |
+|---|---|
+| Historical daily OHLCV | cache allowed |
+| Reference/fundamental data | cache allowed |
+| Price board | cache off or very short TTL |
+| Intraday trades today | cache off or very short TTL |
+| Live watcher events | cache off by default |
 
-**Goal:** prepare clean, validated data for pattern detection and AI-assisted research.
+Exit criteria:
 
-**Depends on:** Phase 0 and Phase 2.
-
-### 3.1 Universe snapshot
-
-- Add a clean universe loader for HOSE, HNX, UPCOM.
-- Include listing status, exchange, industry/sector if available.
-- Mark suspended/delisted/new listings explicitly.
-
-### 3.2 Feature-ready normalized outputs
-
-Standardize outputs for scanner features:
-
-- OHLCV bars
-- liquidity metrics
-- turnover/value
-- foreign flow
-- relative strength vs VNINDEX/VN30/sector index
-- accumulation/base metrics
-- breakout candidate features
-
-### 3.3 Data quality summary report
-
-For each scanner run, generate:
-
-- symbol coverage
-- missing dates
-- stale data
-- provider fallback usage
-- validation warnings/errors
-- excluded symbols and reasons
-
-### Exit Criteria
-
-- Scanner input dataset can be trusted and audited.
-- Every excluded symbol has a machine-readable reason.
-- No signal generation is run on unvalidated data by default.
+- full-market OHLCV scan can run with bounded provider calls
+- partial failures are structured and inspectable
+- provider and quality metadata exist per symbol
+- raw and normalized outputs can be persisted together
 
 ---
 
-## Phase 4 — Storage and Incremental Sync
+## Phase 3 — Storage and Incremental Sync
 
-**Goal:** turn the library into a reliable ingestion component for research pipelines.
+**Goal:** make data collection reproducible and auditable.
 
-**Depends on:** Phase 0, Phase 1, Phase 2.
+### 3.1 Local storage sinks
 
-### 4.1 Local storage sinks
-
-- Parquet sink
-- DuckDB sink
+- Parquet partitioned by dataset/symbol/interval/date
+- DuckDB for local analytics
 - SQLite metadata store for sync state
 
-### 4.2 TimescaleDB/PostgreSQL sink
+### 3.2 PostgreSQL / TimescaleDB sink
 
-Target table:
+Target normalized OHLCV table:
 
 ```sql
 market_ohlcv(
@@ -288,102 +280,183 @@ market_ohlcv(
     provider,
     fetched_at,
     quality_status,
+    quality_report_json,
+    provider_diagnostics_json,
     PRIMARY KEY(symbol, time, interval, provider)
 )
 ```
 
-### 4.3 Incremental sync
+### 3.3 Incremental sync
 
-- Sync by symbol/date range.
-- Idempotent upsert.
-- Store provider diagnostics and validation summaries.
-- Allow revalidation without refetching raw data.
+- sync by symbol/date range
+- gap detection before fetch
+- idempotent upsert
+- revalidation without refetching raw data
+- run manifest per sync job
 
-### Exit Criteria
+Exit criteria:
 
-- Historical OHLCV can be synced incrementally.
-- Re-runs are idempotent.
-- Data lineage is traceable by provider and fetch timestamp.
+- historical OHLCV can be synced incrementally
+- re-runs are idempotent
+- data lineage is traceable by provider and fetch timestamp
+- quality reports are stored with the data
 
 ---
 
-## Phase 5 — Live Watcher / Polling Adapter
+## Phase 4 — Dataset Coverage Expansion
 
-**Goal:** provide stream-like polling without pretending to have WebSocket support.
+**Goal:** expand collected datasets after runtime/storage foundations are stable.
 
-**Depends on:** Phase 0, Phase 1, Phase 2.
+Priority datasets:
 
-### 5.1 Watcher class
+1. OHLCV daily/intraday coverage expansion
+2. price board snapshots
+3. intraday trades
+4. foreign investor flow
+5. index/sector data
+6. reference/company metadata
+7. fundamental statements
+8. corporate events
+9. ownership/shareholders
+10. derivatives/open interest if reliable
 
-Target API:
+### 4.1 Foreign flow dataset
 
-```python
-watcher = Market().equity().watcher(
-    symbols=["VCB", "TCB"],
-    interval_seconds=3,
-    source="auto",
-    validate=True,
-)
+Current state:
 
-for event in watcher.stream():
-    process(event)
+- price board can expose `foreign_buy_volume`, `foreign_sell_volume`, and `foreign_room`
+- historical foreign-flow time-series is not implemented
+
+Target schema:
+
+```text
+symbol
+date
+foreign_buy_volume
+foreign_sell_volume
+foreign_net_volume
+foreign_buy_value
+foreign_sell_value
+foreign_net_value
+foreign_room
+provider
+fetched_at
 ```
 
-### 5.2 Session-aware polling
-
-- Do not poll aggressively outside market hours.
-- Support pre-open, continuous session, ATC, post-close behavior.
-- Emit heartbeat/status events.
-
-### 5.3 Live diagnostics
-
-Each event should include:
-
-- provider used
-- latency
-- cache hit/miss
-- validation summary
-- stale flag
-- retry/fallback count
-
-### Exit Criteria
-
-- Watcher can run a paper scanner loop safely.
-- Rate limits are respected.
-- Stale or invalid data is surfaced explicitly.
+Implementation should start only after endpoint discovery and raw fixtures are available.
 
 ---
 
-## Phase 6 — Additional Trading Data Coverage
+## Phase 5 — Quality Contracts Beyond Market Data
 
-**Goal:** close useful market-data gaps after the data foundation is reliable.
+**Goal:** apply quality validation to non-price datasets.
 
-**Depends on:** earlier phases.
+### 5.1 Reference data contracts
 
-### 6.1 Volume-by-price
+Validate:
 
-- Wire KBS matched-by-price endpoint if still available.
-- Return price, buy volume, sell volume, unknown volume, total volume.
+- equity list
+- industry list
+- company info
+- officers
+- shareholders
+- subsidiaries
+- corporate events/news metadata
 
-### 6.2 Historical foreign flow
+### 5.2 Fundamental data contracts
 
-- Investigate available endpoints for daily foreign buy/sell/net flow.
-- Add time-series support only if reliable and contract-tested.
+Validate:
 
-### 6.3 Level 2 order book normalization
+- balance sheet
+- income statement
+- cash flow
+- ratios
+- period/fiscal-year consistency
+- duplicate periods
+- missing core line items
+- unit scale consistency
 
-- Extract VCI bid/ask ladder from existing price board.
-- Normalize to side/level/price/volume schema.
+Exit criteria:
 
-### 6.4 Open interest history
+- reference/fundamental outputs have schema contracts
+- quality reports exist for non-price datasets
+- provider drift is detectable for fundamental data
 
-- Investigate futures OI history endpoints.
-- Add only if source is stable enough for contract/live smoke coverage.
+---
 
-### 6.5 Index membership history
+## Phase 6 — Intraday and Near-Real-Time Collection
 
-- Investigate sector/index constituent endpoints.
-- Required for proper historical relative-strength and sector rotation studies.
+**Goal:** collect intraday data safely without pretending to have exchange-grade streaming.
+
+### 6.1 Session-aware polling
+
+- market session calendar
+- pre-open/continuous/ATC/post-close handling
+- heartbeat/status events
+- rate limiter integration
+- provider fallback integration
+
+### 6.2 Append-only intraday storage
+
+- snapshot deduplication
+- trade id deduplication
+- stale detection
+- polling manifest
+- provider diagnostics per event batch
+
+Exit criteria:
+
+- near-real-time collection loop can run safely
+- rate limits are respected
+- stale/invalid data is surfaced explicitly
+
+---
+
+## Phase 7 — Data Catalog, Lineage, and Observability
+
+**Goal:** make collected data understandable and operationally visible.
+
+Add:
+
+- dataset catalog
+- provider capability catalog
+- schema registry
+- sync run manifest
+- freshness dashboard
+- quality dashboard
+- provider uptime/error dashboard
+- data coverage report
+
+Exit criteria:
+
+- every dataset has owner/source/schema/freshness metadata
+- every sync job has a manifest
+- operational health is visible without reading raw logs
+
+---
+
+## Phase 8 — Scanner / Research Readiness
+
+**Goal:** prepare validated and auditable inputs for pattern detection and AI-assisted research.
+
+Scanner work should start after data collection is reliable.
+
+Inputs should include:
+
+- clean symbol universe
+- listing status
+- exchange/sector metadata
+- OHLCV bars
+- liquidity/turnover/value features
+- foreign-flow features where available
+- relative strength vs index/sector
+- quality summary and exclusion reasons
+
+Exit criteria:
+
+- scanner consumes validated datasets only
+- every excluded symbol has a machine-readable reason
+- run manifests include code version, data version, provider diagnostics, and quality summary
 
 ---
 
@@ -392,64 +465,39 @@ Each event should include:
 ```text
   High Impact
      │
-     │   P0 correctness fixes ───── mandatory gate before downstream use
-     │   P1 provider hardening ──── makes source fallback trustworthy
-     │   P2 rate limit + batch ──── unlocks full-market scanning
-     │   P3 scanner readiness ───── clean input for pattern detection
+     │   P1 provider reliability ── next blocker
+     │   P2 ingestion runtime ───── batch, retry, rate-limit, raw archive
+     │   P3 storage/sync ────────── reproducibility and auditability
+     │   P4 coverage expansion ──── collect more datasets
      │
-     │   P4 storage sync ────────── research-grade ingestion layer
-     │   P5 watcher ─────────────── live/paper scanner loop
-     │   P6 extra endpoints ─────── useful but must wait for foundation
+     │   P5 quality contracts ───── trust beyond market data
+     │   P6 intraday collection ─── near-real-time pipeline
+     │   P7 catalog/observability ─ operate the platform
+     │   P8 scanner readiness ───── research layer after data is solid
      │
      └────────────────────────────────────────────────────────────
-          Low Effort ─────────────────────────────── High Effort
+          Lower Effort ───────────────────────────── Higher Effort
 ```
 
-**Start here:** Phase 0. Do not build scanner, batch, watcher, or storage on top of validators/provider hardening until correctness fixes land.
+**Start here:** Phase 1 provider reliability, then Phase 2 ingestion runtime.
 
-**Biggest unlock after Phase 0:** Phase 2 batch + rate limiting. This enables full-market scans without provider abuse.
-
-**Most important architectural rule:** data quality and provider diagnostics must travel with the data. A scanner should never consume anonymous, unvalidated DataFrames.
+**Architectural rule:** quality reports and provider diagnostics must travel with the data. Do not let downstream scanners consume anonymous, unvalidated DataFrames.
 
 ---
 
-## Provider Capability Matrix — Current
+## Definition of Done for Data Collection Foundation
 
-| Capability | KBS | VCI | DNSE | MSN | FMP | FMarket |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|
-| Intraday OHLCV 1m | yes | yes/resample | yes | no | yes/global | no |
-| Intraday OHLCV 5m/15m/30m | yes | resample | yes | no | yes/global | no |
-| Intraday OHLCV 1h | yes | yes | yes | no | yes/global | no |
-| Daily/Weekly/Monthly OHLCV | yes | yes | yes | yes | yes | no |
-| Tick tape today-only | yes | yes | yes | no | no | no |
-| Historical tick data | no | no | no | no | no | no |
-| Price board multi-symbol | yes | yes | yes | no | no | no |
-| Foreign flow session | yes | partial | yes | no | no | no |
-| Foreign flow time-series | stub/unknown | unknown | unknown | no | no | no |
-| Volume-by-price | stub | no | no | no | no | no |
-| Level 2 order book | partial | in price_board | unknown | no | no | no |
-| Open interest today | yes/futures | unknown | unknown | no | no | no |
-| Open interest history | unknown | unknown | unknown | no | no | no |
-| Fundamental/company data | yes | yes | no | no | no | yes |
-| Forex/crypto OHLCV | no | no | no | yes | yes | no |
-| Vietnam sector indices | yes/limited | yes/broad | unknown | no | no | no |
-| WebSocket/streaming | no | no | no | no | no | no |
+The data foundation is ready when:
 
----
-
-## Definition of Done for Data Foundation
-
-The data foundation is considered ready for scanner development only when:
-
-- quality validation can be globally enabled and verified
-- validators are index-safe
-- validation failures are observable
-- provider model type contracts are consistent
-- provider drift/comparison functions handle invalid input safely
-- contract tests fail on adapter drift
-- offline CI passes on Python 3.10–3.13
-- live smoke checks are available for manual/scheduled runs
-- data quality reports and provider diagnostics are attached to returned data or batch reports
+- provider health is reflected in routing or batch diagnostics
+- batch API reports partial failures cleanly
+- rate limiting prevents uncontrolled provider calls
+- raw responses can be archived
+- normalized outputs carry provider metadata
+- quality reports attach to every validated dataset
+- storage persists quality and provider diagnostics
+- full-market scans are reproducible and auditable
+- live smoke checks can be run operationally
 
 ---
 
