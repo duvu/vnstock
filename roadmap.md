@@ -1,6 +1,6 @@
 # vnstock Roadmap — Trading Data Focus
 
-> Goal: make `vnstock` a first-class data extraction library for algo-trading and quantitative finance on Vietnamese and global markets.  
+> Goal: make `vnstock` a first-class data extraction library for algo-trading and quantitative finance on Vietnamese and global markets.
 > Architecture constraint: data extraction only, flat/open access, no user registration, no broker execution.
 
 ---
