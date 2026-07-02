@@ -2,46 +2,46 @@
 
 ## 1. Provider Models
 
-- [ ] Add `vnstock/core/provider/models.py`
-- [ ] Implement `ProviderCapability`
-- [ ] Implement `ProviderHealth`
-- [ ] Implement `ProviderComparisonReport`
-- [ ] Implement structured provider issue model
-- [ ] Add unit tests for model serialization
+- [x] Add `vnstock/core/provider/models.py`
+- [x] Implement `ProviderCapability`
+- [x] Implement `ProviderHealth`
+- [x] Implement `ProviderComparisonReport`
+- [x] Implement structured provider issue model
+- [x] Add unit tests for model serialization
 
 ## 2. Capability Registry
 
-- [ ] Add `vnstock/core/provider/capabilities.py`
-- [ ] Register KBS capabilities
-- [ ] Register VCI capabilities
-- [ ] Register DNSE capabilities
-- [ ] Register MSN capabilities where applicable
-- [ ] Register FMP capabilities where applicable
-- [ ] Register FMarket capabilities where applicable
-- [ ] Add helper to query providers by dataset type, asset class, method, and interval
-- [ ] Add tests for unsupported capability behavior
+- [x] Add `vnstock/core/provider/capabilities.py`
+- [x] Register KBS capabilities
+- [x] Register VCI capabilities
+- [x] Register DNSE capabilities
+- [x] Register MSN capabilities where applicable
+- [x] Register FMP capabilities where applicable
+- [x] Register FMarket capabilities where applicable
+- [x] Add helper to query providers by dataset type, asset class, method, and interval
+- [x] Add tests for unsupported capability behavior
 
 ## 3. Contract Fixture Structure
 
-- [ ] Add `tests/fixtures/providers/dnse/`
-- [ ] Add `tests/fixtures/providers/kbs/`
-- [ ] Add `tests/fixtures/providers/vci/`
-- [ ] Add raw sample fixtures for OHLCV daily
-- [ ] Add raw sample fixtures for price board
-- [ ] Add raw sample fixtures for intraday trades
-- [ ] Add normalized expected output fixtures where practical
-- [ ] Document fixture update process
+- [x] Add `tests/fixtures/providers/dnse/`
+- [x] Add `tests/fixtures/providers/kbs/`
+- [x] Add `tests/fixtures/providers/vci/`
+- [x] Add raw sample fixtures for OHLCV daily
+- [x] Add raw sample fixtures for price board
+- [x] Add raw sample fixtures for intraday trades
+- [x] Add normalized expected output fixtures where practical
+- [x] Document fixture update process
 
 ## 4. Provider Contract Tests
 
-- [ ] Add `tests/contracts/providers/test_dnse_contracts.py`
-- [ ] Add `tests/contracts/providers/test_kbs_contracts.py`
-- [ ] Add `tests/contracts/providers/test_vci_contracts.py`
-- [ ] Validate raw fixture parsing
-- [ ] Validate normalized OHLCV schema
-- [ ] Validate normalized price board schema
-- [ ] Validate normalized intraday schema
-- [ ] Ensure contract tests do not call live endpoints
+- [x] Add `tests/contracts/providers/test_dnse_contracts.py`
+- [x] Add `tests/contracts/providers/test_kbs_contracts.py`
+- [x] Add `tests/contracts/providers/test_vci_contracts.py`
+- [x] Validate raw fixture parsing
+- [x] Validate normalized OHLCV schema
+- [x] Validate normalized price board schema
+- [x] Validate normalized intraday schema
+- [x] Ensure contract tests do not call live endpoints
 
 ## 5. Live Smoke Test Infrastructure
 
@@ -66,77 +66,77 @@
 
 ## 7. Schema Drift Detection
 
-- [ ] Add `vnstock/core/provider/drift.py`
-- [ ] Implement raw schema drift detector
-- [ ] Implement normalized schema drift detector
-- [ ] Classify drift as `none`, `minor`, or `major`
-- [ ] Detect missing required raw fields
-- [ ] Detect missing required normalized columns
-- [ ] Detect dtype category drift
-- [ ] Add unit tests with drift fixtures
+- [x] Add `vnstock/core/provider/drift.py`
+- [x] Implement raw schema drift detector
+- [x] Implement normalized schema drift detector
+- [x] Classify drift as `none`, `minor`, or `major`
+- [x] Detect missing required raw fields
+- [x] Detect missing required normalized columns
+- [x] Detect dtype category drift
+- [x] Add unit tests with drift fixtures
 
 ## 8. Cross-Provider Comparison
 
-- [ ] Add `vnstock/core/provider/compare.py`
-- [ ] Implement OHLCV comparison across KBS, VCI, DNSE
-- [ ] Implement missing-date comparison
-- [ ] Implement price difference summary
-- [ ] Implement volume difference summary
-- [ ] Implement price-scale mismatch detection
-- [ ] Add configurable tolerances
-- [ ] Add tests using synthetic provider outputs
+- [x] Add `vnstock/core/provider/compare.py`
+- [x] Implement OHLCV comparison across KBS, VCI, DNSE
+- [x] Implement missing-date comparison
+- [x] Implement price difference summary
+- [x] Implement volume difference summary
+- [x] Implement price-scale mismatch detection
+- [x] Add configurable tolerances
+- [x] Add tests using synthetic provider outputs
 
 ## 9. Provider Health Scoring
 
-- [ ] Add `vnstock/core/provider/health.py`
-- [ ] Implement health statuses: `healthy`, `degraded`, `failing`, `unknown`
-- [ ] Convert contract test results into health signals
-- [ ] Convert live smoke test results into health signals
-- [ ] Track latency, error rate, schema status, freshness status, and issues
-- [ ] Add tests for health state transitions
+- [x] Add `vnstock/core/provider/health.py`
+- [x] Implement health statuses: `healthy`, `degraded`, `failing`, `unknown`
+- [x] Convert contract test results into health signals
+- [x] Convert live smoke test results into health signals
+- [x] Track latency, error rate, schema status, freshness status, and issues
+- [x] Add tests for health state transitions
 
 ## 10. Router Integration
 
-- [ ] Update `vnstock/core/router.py` to optionally use provider health state
-- [ ] Prefer healthy providers
-- [ ] Allow degraded providers only when necessary
-- [ ] Skip failing providers unless caller forces source
-- [ ] Add `ignore_provider_health` option
-- [ ] Add `include_provider_diagnostics` option
-- [ ] Add router tests for health-aware provider selection
+- [x] Update `vnstock/core/router.py` to optionally use provider health state
+- [x] Prefer healthy providers
+- [x] Allow degraded providers only when necessary
+- [x] Skip failing providers unless caller forces source
+- [x] Add `ignore_provider_health` option
+- [x] Add `include_provider_diagnostics` option
+- [x] Add router tests for health-aware provider selection
 
 ## 11. Provider Capability Matrix
 
-- [ ] Add matrix generator utility
-- [ ] Generate `docs/PROVIDER_MATRIX.md`
-- [ ] Generate machine-readable provider matrix JSON artifact
-- [ ] Include provider, dataset type, asset class, method, intervals, auth requirement, contract status, live status, notes
-- [ ] Add tests for matrix generation
+- [x] Add matrix generator utility
+- [x] Generate `docs/PROVIDER_MATRIX.md`
+- [x] Generate machine-readable provider matrix JSON artifact
+- [x] Include provider, dataset type, asset class, method, intervals, auth requirement, contract status, live status, notes
+- [x] Add tests for matrix generation
 
 ## 12. CI Integration
 
-- [ ] Add contract tests to normal CI
-- [ ] Ensure live tests are skipped in normal CI
-- [ ] Add optional scheduled/manual live smoke workflow
-- [ ] Add marker docs to `pytest.ini`
-- [ ] Fail CI on contract drift
-- [ ] Do not fail normal CI on unavailable live providers unless explicitly enabled
+- [x] Add contract tests to normal CI
+- [x] Ensure live tests are skipped in normal CI
+- [x] Add optional scheduled/manual live smoke workflow
+- [x] Add marker docs to `pytest.ini`
+- [x] Fail CI on contract drift
+- [x] Do not fail normal CI on unavailable live providers unless explicitly enabled
 
 ## 13. Documentation
 
-- [ ] Add `docs/PROVIDER_HARDENING.md`
-- [ ] Document contract tests
-- [ ] Document live smoke tests
-- [ ] Document provider health statuses
-- [ ] Document cross-provider comparison
-- [ ] Document provider matrix generation
-- [ ] Document how to add a new provider safely
+- [x] Add `docs/PROVIDER_HARDENING.md`
+- [x] Document contract tests
+- [x] Document live smoke tests
+- [x] Document provider health statuses
+- [x] Document cross-provider comparison
+- [x] Document provider matrix generation
+- [x] Document how to add a new provider safely
 
 ## 14. Rollout Plan
 
-- [ ] Start with DNSE contract fixtures and tests
-- [ ] Add KBS and VCI fixtures next
-- [ ] Add OHLCV comparison first
-- [ ] Add price board comparison second
-- [ ] Add intraday comparison last
-- [ ] Integrate provider health with router only after contract tests are stable
+- [x] Start with DNSE contract fixtures and tests
+- [x] Add KBS and VCI fixtures next
+- [x] Add OHLCV comparison first
+- [x] Add price board comparison second
+- [x] Add intraday comparison last
+- [x] Integrate provider health with router only after contract tests are stable
