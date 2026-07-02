@@ -36,6 +36,28 @@ _OPTIONAL_VOLUME_COLUMNS = [
 ]
 
 
+def _safe_positional_index(df, label_index):
+    """Return 0-based positional index for label_index; avoids int() crash on non-int indices."""
+    try:
+        loc = df.index.get_loc(label_index)
+        if isinstance(loc, int):
+            return loc
+        # Duplicate labels: get_loc returns slice or boolean ndarray
+        if isinstance(loc, slice):
+            # Return the start of the slice (first matching position)
+            return loc.start if loc.start is not None else 0
+        # Boolean ndarray
+        if hasattr(loc, "nonzero"):
+            nz = loc.nonzero()[0]
+            return int(nz[0]) if len(nz) > 0 else None
+        return None
+    except Exception:
+        try:
+            return int(label_index)
+        except (TypeError, ValueError):
+            return None
+
+
 class PriceBoardValidator(BaseValidator):
     """Validate price board snapshot DataFrames.
 
@@ -129,7 +151,7 @@ def _check_duplicate_symbols(
                 severity="warning",
                 message=f"Symbol '{df.at[idx, 'symbol']}' appears more than once at row {idx}.",
                 column="symbol",
-                row_index=int(idx),
+                row_index=_safe_positional_index(df, idx),
                 value=str(df.at[idx, "symbol"]),
             )
         )
@@ -160,7 +182,7 @@ def _check_price_band_consistency(
                 code="BOARD_PRICE_OUTSIDE_FLOOR_CEILING",
                 severity="error",
                 message=f"floor_price > ceiling_price at row {idx}.",
-                row_index=int(idx),
+                row_index=_safe_positional_index(df, idx),
                 context={
                     "floor_price": df.at[idx, "floor_price"],
                     "ceiling_price": df.at[idx, "ceiling_price"],
@@ -183,7 +205,7 @@ def _check_price_band_consistency(
                     severity="warning",
                     message=f"reference_price is outside [floor, ceiling] at row {idx}.",
                     column="reference_price",
-                    row_index=int(idx),
+                    row_index=_safe_positional_index(df, idx),
                 )
             )
             if len(issues) >= max_examples:
@@ -205,7 +227,7 @@ def _check_price_band_consistency(
                     severity="error",
                     message=f"close_price is outside [floor, ceiling] at row {idx}.",
                     column="close_price",
-                    row_index=int(idx),
+                    row_index=_safe_positional_index(df, idx),
                     value=df.at[idx, "close_price"],
                 )
             )
@@ -235,7 +257,7 @@ def _check_bid_ask_crossed(
                 code="BOARD_BID_ASK_CROSSED",
                 severity="warning",
                 message=f"Best bid > best ask at row {idx}.",
-                row_index=int(idx),
+                row_index=_safe_positional_index(df, idx),
                 context={
                     "bid_price_1": df.at[idx, "bid_price_1"],
                     "ask_price_1": df.at[idx, "ask_price_1"],
@@ -267,7 +289,7 @@ def _check_non_negative_volumes(
                     severity="error",
                     message=f"Column '{col}' has a negative volume at row {idx}.",
                     column=col,
-                    row_index=int(idx),
+                    row_index=_safe_positional_index(df, idx),
                     value=df.at[idx, col],
                 )
             )

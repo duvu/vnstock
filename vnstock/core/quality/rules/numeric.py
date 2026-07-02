@@ -17,6 +17,26 @@ _PRICE_SCALE_MIN = 100.0
 _PRICE_SCALE_MAX = 200_000_000.0
 
 
+def _safe_positional_index(df, label_index):
+    """Return 0-based positional index for label_index; avoids int() crash on non-int indices."""
+    try:
+        loc = df.index.get_loc(label_index)
+        if isinstance(loc, int):
+            return loc
+        # Duplicate labels: get_loc returns slice or boolean ndarray
+        if isinstance(loc, slice):
+            return loc.start if loc.start is not None else 0
+        if hasattr(loc, "nonzero"):
+            nz = loc.nonzero()[0]
+            return int(nz[0]) if len(nz) > 0 else None
+        return None
+    except Exception:
+        try:
+            return int(label_index)
+        except (TypeError, ValueError):
+            return None
+
+
 def check_negative_prices(
     df: pd.DataFrame,
     price_columns: list[str],
@@ -45,7 +65,7 @@ def check_negative_prices(
                     severity="error",
                     message=f"Column '{col}' has a negative price value.",
                     column=col,
-                    row_index=int(idx),
+                    row_index=_safe_positional_index(df, idx),
                     value=df.at[idx, col],
                 )
             )
@@ -82,7 +102,7 @@ def check_negative_volumes(
                     severity="error",
                     message=f"Column '{col}' has a negative volume value.",
                     column=col,
-                    row_index=int(idx),
+                    row_index=_safe_positional_index(df, idx),
                     value=df.at[idx, col],
                 )
             )
@@ -125,7 +145,7 @@ def check_null_nan_inf(
                     severity="warning",
                     message=f"Column '{col}' has a null/NaN value.",
                     column=col,
-                    row_index=int(idx),
+                    row_index=_safe_positional_index(df, idx),
                 )
             )
             if len(issues) >= max_examples:
@@ -138,7 +158,7 @@ def check_null_nan_inf(
                     severity="error",
                     message=f"Column '{col}' has an infinite value.",
                     column=col,
-                    row_index=int(idx),
+                    row_index=_safe_positional_index(df, idx),
                     value=df.at[idx, col],
                 )
             )
@@ -187,7 +207,7 @@ def check_price_scale(
                         f"price range [{scale_min}, {scale_max}]."
                     ),
                     column=col,
-                    row_index=int(idx),
+                    row_index=_safe_positional_index(df, idx),
                     value=float(val),
                     context={"scale_min": scale_min, "scale_max": scale_max},
                 )

@@ -144,7 +144,7 @@ class ProviderComparisonReport:
     missing_dates_by_provider: Dict[str, List[str]] = field(default_factory=dict)
     price_diff_summary: Dict[str, Any] = field(default_factory=dict)
     volume_diff_summary: Dict[str, Any] = field(default_factory=dict)
-    issues: List[str] = field(default_factory=list)
+    issues: List[ProviderIssue] = field(default_factory=list)
     interval: Optional[str] = None
     start: Optional[str] = None
     end: Optional[str] = None

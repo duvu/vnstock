@@ -19,6 +19,43 @@ def _utc_now() -> datetime:
     return datetime.now(tz=timezone.utc)
 
 
+def _coerce_datetime(value) -> datetime | None:
+    """Coerce *value* to a UTC-aware datetime.
+
+    Accepts:
+    * ``datetime.datetime`` (tz-aware or tz-naive — naive treated as UTC)
+    * ``pd.Timestamp`` (same rules)
+    * ISO 8601 string (naive treated as UTC)
+
+    Returns ``None`` on failure so callers can decide how to handle missing
+    metadata without raising.
+    """
+    if value is None:
+        return None
+
+    # Already a datetime
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
+
+    # pd.Timestamp
+    if isinstance(value, pd.Timestamp):
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc).to_pydatetime()
+        return value.to_pydatetime().astimezone(timezone.utc)
+
+    # String → parse
+    if isinstance(value, str):
+        try:
+            ts = pd.to_datetime(value, utc=True)
+            return ts.to_pydatetime()
+        except Exception:
+            return None
+
+    return None
+
+
 def _get_latest_time(df: pd.DataFrame, time_column: str = "time") -> datetime | None:
     """Return the latest parseable timestamp in *time_column*, or None."""
     if time_column not in df.columns or df.empty:
@@ -57,7 +94,8 @@ def check_stale_price_board(
     issues: list[QualityIssue] = []
     now = _utc_now()
 
-    ref = fetched_at or df.attrs.get("fetched_at")
+    raw_ref = fetched_at if fetched_at is not None else df.attrs.get("fetched_at")
+    ref = _coerce_datetime(raw_ref)
     if ref is None:
         # Fall back to latest data timestamp
         ref = _get_latest_time(df, time_column)
@@ -72,6 +110,7 @@ def check_stale_price_board(
         )
         return issues
 
+    # ref is already UTC-aware after _coerce_datetime / _get_latest_time
     if ref.tzinfo is None:
         ref = ref.replace(tzinfo=timezone.utc)
     age_seconds = (now - ref).total_seconds()

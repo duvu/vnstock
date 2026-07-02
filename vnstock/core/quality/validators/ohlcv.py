@@ -23,6 +23,28 @@ _VOLUME_COLUMNS = ["volume"]
 _NUMERIC_COLUMNS = ["open", "high", "low", "close", "volume"]
 
 
+def _safe_positional_index(df, label_index):
+    """Return 0-based positional index for label_index; avoids int() crash on non-int indices."""
+    try:
+        loc = df.index.get_loc(label_index)
+        if isinstance(loc, int):
+            return loc
+        # Duplicate labels: get_loc returns slice or boolean ndarray
+        if isinstance(loc, slice):
+            # Return the start of the slice (first matching position)
+            return loc.start if loc.start is not None else 0
+        # Boolean ndarray
+        if hasattr(loc, "nonzero"):
+            nz = loc.nonzero()[0]
+            return int(nz[0]) if len(nz) > 0 else None
+        return None
+    except Exception:
+        try:
+            return int(label_index)
+        except (TypeError, ValueError):
+            return None
+
+
 class OHLCVValidator(BaseValidator):
     """Validate OHLCV DataFrames.
 
@@ -164,7 +186,7 @@ def _check_ohlc_consistency(
                     severity="error",
                     message=f"OHLC inconsistency: {label} at row {idx}.",
                     column=col_a,
-                    row_index=int(idx),
+                    row_index=_safe_positional_index(df, idx),
                     context={col_a: df.at[idx, col_a], col_b: df.at[idx, col_b]},
                 )
             )

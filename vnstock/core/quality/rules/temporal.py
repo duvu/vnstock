@@ -13,6 +13,26 @@ import pandas as pd
 from vnstock.core.quality.models import QualityIssue
 
 
+def _safe_positional_index(df, label_index):
+    """Return 0-based positional index for label_index; avoids int() crash on non-int indices."""
+    try:
+        loc = df.index.get_loc(label_index)
+        if isinstance(loc, int):
+            return loc
+        # Duplicate labels: get_loc returns slice or boolean ndarray
+        if isinstance(loc, slice):
+            return loc.start if loc.start is not None else 0
+        if hasattr(loc, "nonzero"):
+            nz = loc.nonzero()[0]
+            return int(nz[0]) if len(nz) > 0 else None
+        return None
+    except Exception:
+        try:
+            return int(label_index)
+        except (TypeError, ValueError):
+            return None
+
+
 def _parse_time_series(series: pd.Series) -> pd.Series:
     """Coerce *series* to datetime, returning NaT for unparseable values."""
     if pd.api.types.is_datetime64_any_dtype(series):
@@ -53,7 +73,7 @@ def check_datetime_parse(
                 severity="warning",
                 message=f"Column '{time_column}' is null at row {idx}.",
                 column=time_column,
-                row_index=int(idx),
+                row_index=_safe_positional_index(df, idx),
             )
         )
     for idx in df.index[parse_failed][:max_examples]:
@@ -63,7 +83,7 @@ def check_datetime_parse(
                 severity="error",
                 message=f"Column '{time_column}' could not be parsed as datetime at row {idx}.",
                 column=time_column,
-                row_index=int(idx),
+                row_index=_safe_positional_index(df, idx),
                 value=str(df.at[idx, time_column]),
             )
         )
@@ -97,7 +117,7 @@ def check_duplicate_times(
                 severity="warning",
                 message=f"Duplicate timestamp in column '{time_column}' at row {idx}.",
                 column=time_column,
-                row_index=int(idx),
+                row_index=_safe_positional_index(df, idx),
                 value=str(df.at[idx, time_column]),
             )
         )
@@ -140,7 +160,7 @@ def check_monotonic_time(
                     f"Column '{time_column}' is not monotonically increasing at row {idx}."
                 ),
                 column=time_column,
-                row_index=int(idx),
+                row_index=_safe_positional_index(df, idx),
                 value=str(df.at[idx, time_column]),
             )
         )
@@ -183,7 +203,7 @@ def check_future_times(
                 severity="warning",
                 message=f"Column '{time_column}' has a future timestamp at row {idx}.",
                 column=time_column,
-                row_index=int(idx),
+                row_index=_safe_positional_index(df, idx),
                 value=str(df.at[idx, time_column]),
             )
         )
