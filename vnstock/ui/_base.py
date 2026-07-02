@@ -70,6 +70,10 @@ class BaseUI:
         _use_cache = kwargs.pop("use_cache", None)
         _cache_ttl = kwargs.pop("cache_ttl", None)
 
+        # 3b2. Pop quality control kwargs before they leak into provider calls.
+        _validate: bool = kwargs.pop("validate", False)
+        _quality_mode: str = kwargs.pop("quality_mode", "warn")
+
         # 3c. Load-balancer: override source via router when caller did not specify.
         _using_router = False
         _pool_key: tuple | None = None
@@ -173,6 +177,18 @@ class BaseUI:
                         _cache_manager.set(_cache_key, result, ttl)
                     except Exception:
                         pass  # cache write errors must never break the response
+
+                # Optional quality validation
+                if _validate and isinstance(result, pd.DataFrame):
+                    result = _run_quality_validation(
+                        result,
+                        domain_name=domain_name,
+                        method_name=method_name,
+                        consumed_subdomain=consumed_subdomain,
+                        quality_mode=_quality_mode,
+                        provider=kwargs.get("source", ""),
+                        symbol=getattr(self, "symbol", None),
+                    )
 
                 return result
 
@@ -353,3 +369,100 @@ class BaseDetailUI(BaseUI):
     def __init__(self, symbol: str = None, **kwargs):
         self.symbol = symbol
         self.params = kwargs
+
+
+# ---------------------------------------------------------------------------
+# Quality validation helper (internal)
+# ---------------------------------------------------------------------------
+
+_DOMAIN_TO_DATASET_TYPE: dict[str, dict[str, str]] = {
+    # domain_name -> {subdomain / method_name -> dataset_type}
+    "Market": {
+        "ohlcv": "ohlcv",
+        "price_board": "price_board",
+        "intraday": "intraday_trades",
+    },
+}
+
+
+def _infer_dataset_type(
+    domain_name: str,
+    method_name: str,
+    consumed_subdomain: str | None,
+) -> str | None:
+    """Return a dataset_type string or None when the method is not mapped."""
+    domain_map = _DOMAIN_TO_DATASET_TYPE.get(domain_name, {})
+    # Try subdomain first, then method_name
+    key = consumed_subdomain or method_name
+    return domain_map.get(key)
+
+
+def _run_quality_validation(
+    df: pd.DataFrame,
+    *,
+    domain_name: str,
+    method_name: str,
+    consumed_subdomain: str | None,
+    quality_mode: str,
+    provider: str | None,
+    symbol: Any | None,
+) -> pd.DataFrame:
+    """Run quality validation and optionally raise or attach report.
+
+    Args:
+        df: DataFrame to validate.
+        domain_name: UI domain (e.g. ``"Market"``).
+        method_name: UI method (e.g. ``"equity"``).
+        consumed_subdomain: Sub-method (e.g. ``"ohlcv"``).
+        quality_mode: One of ``"off"``, ``"warn"``, ``"strict"``.
+        provider: Provider name for report metadata.
+        symbol: Ticker for report metadata.
+
+    Returns:
+        The original *df* (possibly with ``df.attrs["quality"]`` attached).
+    """
+    if quality_mode == "off":
+        return df
+
+    dataset_type = _infer_dataset_type(domain_name, method_name, consumed_subdomain)
+    if dataset_type is None:
+        # No mapping → cannot validate; skip silently
+        return df
+
+    try:
+        import warnings as _warnings
+
+        from vnstock.core.quality.exceptions import DataQualityError
+        from vnstock.core.quality.registry import validate_dataframe
+
+        sym_str = str(symbol) if symbol is not None else None
+        report = validate_dataframe(
+            df,
+            dataset_type=dataset_type,
+            provider=str(provider) if provider else None,
+            symbol=sym_str,
+        )
+
+        from vnstock.core.settings import get_config
+
+        cfg = get_config().quality
+        if cfg.attach_report:
+            df.attrs["quality"] = report
+
+        if quality_mode == "strict" and not report.valid:
+            raise DataQualityError(report)
+
+        if quality_mode == "warn" and report.errors:
+            _warnings.warn(
+                f"Data quality issues detected ({len(report.errors)} errors). "
+                "Inspect df.attrs['quality'] for details.",
+                stacklevel=4,
+            )
+
+    except DataQualityError:
+        raise
+    except Exception:
+        # Quality validation errors must never break the response
+        pass
+
+    return df
