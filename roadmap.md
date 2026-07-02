@@ -112,7 +112,7 @@ python -m build --sdist --wheel --no-isolation
 
 ## Phase 1 — Provider Reliability Completion
 
-**Goal:** make providers interchangeable with measurable reliability.
+**Goal:** make provider fallback and diagnostics trustworthy enough for full-market ingestion.
 
 ### 1.1 Health-aware routing / diagnostics
 
