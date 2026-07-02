@@ -71,8 +71,12 @@ class BaseUI:
         _cache_ttl = kwargs.pop("cache_ttl", None)
 
         # 3b2. Pop quality control kwargs before they leak into provider calls.
-        _validate: bool = kwargs.pop("validate", False)
-        _quality_mode: str = kwargs.pop("quality_mode", "warn")
+        # Honour per-call overrides; fall back to global QualityConfig defaults.
+        from vnstock.core.settings import get_config as _get_config
+
+        _quality_cfg = _get_config().quality
+        _validate: bool = kwargs.pop("validate", _quality_cfg.enabled)
+        _quality_mode: str = kwargs.pop("quality_mode", _quality_cfg.mode)
 
         # 3c. Load-balancer: override source via router when caller did not specify.
         _using_router = False
@@ -461,8 +465,18 @@ def _run_quality_validation(
 
     except DataQualityError:
         raise
-    except Exception:
-        # Quality validation errors must never break the response
-        pass
+    except Exception as _validation_exc:
+        # Quality validation internal errors must never break the data response.
+        # In warn/strict mode, surface a warning so failures are observable.
+        if quality_mode in ("warn", "strict"):
+            import warnings as _w
+
+            _w.warn(
+                f"QUALITY_VALIDATION_INTERNAL_ERROR: validation failed internally "
+                f"and was skipped ({type(_validation_exc).__name__}: {_validation_exc}). "
+                "Data is returned unvalidated.",
+                RuntimeWarning,
+                stacklevel=4,
+            )
 
     return df

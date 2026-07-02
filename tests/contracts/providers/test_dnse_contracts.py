@@ -127,17 +127,19 @@ class TestDNSEPriceBoardContract:
         assert "r" in item  # reference_price
 
     def test_normalized_schema_has_required_columns(self):
-        """Parsed DNSE price board should include minimum required columns."""
+        """Parsed DNSE price board should include minimum required columns.
+
+        This test intentionally does NOT swallow ImportError or interface
+        changes — a failure here means the provider interface has drifted
+        and the contract test must be updated accordingly.
+        """
         data = _load_fixture("price_board_raw.json")
 
         with patch("vnstock.explorer.dnse.trading.send_request", return_value=data):
-            try:
-                from vnstock.explorer.dnse.trading import Trading
+            from vnstock.explorer.dnse.trading import Trading
 
-                t = Trading()
-                df = t.price_board(symbols_list=["FPT", "VCB"])
-            except Exception:
-                pytest.skip("DNSE trading module not available or interface changed")
+            t = Trading()
+            df = t.price_board(symbols_list=["FPT", "VCB"])
 
         for col in _PRICE_BOARD_REQUIRED_COLUMNS:
             assert col in df.columns, f"Missing price board column: {col}"

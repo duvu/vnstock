@@ -119,7 +119,30 @@ def detect_drift(
     list[ProviderIssue]
         Empty list means no drift detected.
     """
-    provider_key = provider.lower()
+    provider_key = provider.lower() if isinstance(provider, str) else ""
+    if not isinstance(df, pd.DataFrame):
+        return [
+            ProviderIssue(
+                code="DRIFT_INVALID_INPUT",
+                severity="error",
+                provider=str(provider) if provider else "",
+                capability=str(dataset_type) if dataset_type else "",
+                message=(
+                    f"detect_drift() requires a pandas DataFrame; "
+                    f"got {type(df).__name__!r}."
+                ),
+            )
+        ]
+    if not isinstance(provider, str) or not provider.strip():
+        return [
+            ProviderIssue(
+                code="DRIFT_INVALID_INPUT",
+                severity="error",
+                provider=str(provider) if provider else "",
+                capability=str(dataset_type) if dataset_type else "",
+                message="detect_drift() requires a non-empty provider string.",
+            )
+        ]
     schema = extra_schema or _get_baseline().get((provider_key, dataset_type))
 
     if schema is None:

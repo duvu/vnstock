@@ -76,7 +76,7 @@ def score_health(
     error_rate: float | None = None,
     schema_status: str = "unknown",
     freshness_status: str = "unknown",
-    capabilities_checked: int = 0,
+    capabilities_checked: list[str] | None = None,
     checked_at: datetime | None = None,
 ) -> ProviderHealth:
     """Derive a ProviderHealth snapshot from evidence.
@@ -96,7 +96,8 @@ def score_health(
     freshness_status:
         "fresh" | "stale" | "unknown".
     capabilities_checked:
-        Number of capabilities tested in this health check.
+        List of capability keys tested in this health check (e.g. ``["ohlcv/equity"]``).
+        Pass ``None`` or omit for unknown / not applicable.
     checked_at:
         Timestamp of the check; defaults to utcnow().
 
@@ -114,7 +115,9 @@ def score_health(
         provider=provider,
         status=status,
         checked_at=checked_at,
-        capabilities_checked=capabilities_checked,
+        capabilities_checked=list(capabilities_checked)
+        if isinstance(capabilities_checked, (list, tuple))
+        else [],
         latency_ms=latency_ms,
         error_rate=error_rate,
         schema_status=schema_status,

@@ -93,8 +93,14 @@ class TestScoreHealthMetadata:
         assert health.freshness_status == "stale"
 
     def test_capabilities_checked_stored(self):
-        health = score_health("vci", [], capabilities_checked=5)
-        assert health.capabilities_checked == 5
+        health = score_health(
+            "vci", [], capabilities_checked=["ohlcv/equity", "price_board/equity"]
+        )
+        assert health.capabilities_checked == ["ohlcv/equity", "price_board/equity"]
+
+    def test_capabilities_checked_default_is_empty_list(self):
+        health = score_health("vci", [])
+        assert health.capabilities_checked == []
 
     def test_custom_timestamp_stored(self):
         ts = datetime(2026, 7, 1, 12, 0, 0, tzinfo=timezone.utc)

@@ -8,7 +8,7 @@
 
 | Mode | Behaviour |
 |---|---|
-| `off` | No validation. Default when `validate` kwarg is absent. |
+| `off` | No validation. Default when `validate` kwarg is absent and `VNSTOCK_QUALITY_ENABLED=false` (the default). |
 | `warn` | Run validation, attach `ValidationReport` to `df.attrs["quality"]`, emit a `UserWarning` when errors are found. Does not raise. |
 | `strict` | Run validation, raise `DataQualityError` if the report contains at least one error. |
 
@@ -206,10 +206,12 @@ Types `reference` and `fundamental` are planned but not yet implemented.
 ## Limitations
 
 - Validation is provider-agnostic. It cannot detect provider-specific encoding bugs (e.g. price already divided by 1000 by one provider but not another).
-- The freshness check depends on either `df.attrs["fetched_at"]` or the latest row timestamp. Providers that do not populate this field will trigger `FRESHNESS_FETCHED_AT_MISSING`.
+- The freshness check depends on either `df.attrs["fetched_at"]` or the latest row timestamp. Providers that do not populate this field will trigger `FRESHNESS_FETCHED_AT_MISSING`. `fetched_at` is normalised via `_coerce_datetime()` and accepts `datetime`, `pd.Timestamp`, and ISO 8601 strings.
 - Missing trading session detection (`TIME_MISSING_SESSIONS`) requires the caller to supply `expected_dates`. The default CI does not supply a trading calendar.
-- Session time validation (`TRADE_TIME_OUTSIDE_SESSION`, `check_session_time`) is disabled by default because pre-open and post-close data is legitimate in some use cases.
+- Session time validation (`TRADE_TIME_OUTSIDE_SESSION`, `check_session_time`) is disabled by default because pre-open and post-close data is legitimate in some use cases. When enabled, tz-aware timestamps are converted to `Asia/Ho_Chi_Minh`; tz-naive timestamps are treated as local Vietnam time.
 - The data quality layer does not repair or modify data values.
+- When validation fails due to an internal Python error (e.g. a bug in a rule), a `RuntimeWarning` with code `QUALITY_VALIDATION_INTERNAL_ERROR` is emitted in `warn`/`strict` mode. Data is returned unmodified in all cases. Use `quality_mode="off"` to suppress this warning.
+- `row_index` in `QualityIssue` is always the 0-based positional row offset regardless of the DataFrame's actual index type (integer, DatetimeIndex, string, etc.).
 
 ---
 

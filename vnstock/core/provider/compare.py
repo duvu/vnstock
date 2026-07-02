@@ -73,7 +73,57 @@ def compare_ohlcv(
     -------
     ProviderComparisonReport
     """
-    providers = list(dataframes.keys())
+    providers = list(dataframes.keys()) if isinstance(dataframes, dict) else []
+
+    # Guard: invalid input type
+    if not isinstance(dataframes, dict):
+        return ProviderComparisonReport(
+            dataset_type="ohlcv",
+            symbol=symbol,
+            providers=[],
+            comparable=False,
+            base_provider="",
+            interval=interval,
+            start=start,
+            end=end,
+            issues=[
+                ProviderIssue(
+                    code="COMPARE_INVALID_INPUT",
+                    severity="error",
+                    provider="",
+                    capability="ohlcv",
+                    message=(
+                        f"compare_ohlcv() requires a dict[str, DataFrame]; "
+                        f"got {type(dataframes).__name__!r}."
+                    ),
+                )
+            ],
+        )
+
+    # Guard: non-DataFrame values
+    bad_providers = [
+        k for k, v in dataframes.items() if not isinstance(v, pd.DataFrame)
+    ]
+    if bad_providers:
+        return ProviderComparisonReport(
+            dataset_type="ohlcv",
+            symbol=symbol,
+            providers=providers,
+            comparable=False,
+            base_provider=providers[0] if providers else "",
+            interval=interval,
+            start=start,
+            end=end,
+            issues=[
+                ProviderIssue(
+                    code="COMPARE_INVALID_INPUT",
+                    severity="error",
+                    provider=",".join(bad_providers),
+                    capability="ohlcv",
+                    message=(f"Providers {bad_providers} did not return a DataFrame."),
+                )
+            ],
+        )
 
     if len(providers) < 2:
         return ProviderComparisonReport(

@@ -25,6 +25,28 @@ _SESSION_CLOSE_HOUR = 14
 _SESSION_CLOSE_MINUTE = 30
 
 
+def _safe_positional_index(df, label_index):
+    """Return 0-based positional index for label_index; avoids int() crash on non-int indices."""
+    try:
+        loc = df.index.get_loc(label_index)
+        if isinstance(loc, int):
+            return loc
+        # Duplicate labels: get_loc returns slice or boolean ndarray
+        if isinstance(loc, slice):
+            # Return the start of the slice (first matching position)
+            return loc.start if loc.start is not None else 0
+        # Boolean ndarray
+        if hasattr(loc, "nonzero"):
+            nz = loc.nonzero()[0]
+            return int(nz[0]) if len(nz) > 0 else None
+        return None
+    except Exception:
+        try:
+            return int(label_index)
+        except (TypeError, ValueError):
+            return None
+
+
 class IntradayValidator(BaseValidator):
     """Validate intraday trade tick DataFrames.
 
@@ -135,7 +157,7 @@ def _check_match_type(df: pd.DataFrame, max_examples: int = 20) -> list[QualityI
                     f"{sorted(_VALID_MATCH_TYPES)}."
                 ),
                 column="match_type",
-                row_index=int(idx),
+                row_index=_safe_positional_index(df, idx),
                 value=str(df.at[idx, "match_type"]),
             )
         )
@@ -158,7 +180,7 @@ def _check_duplicate_ids(
                 severity="warning",
                 message=f"Duplicate trade id '{df.at[idx, 'id']}' at row {idx}.",
                 column="id",
-                row_index=int(idx),
+                row_index=_safe_positional_index(df, idx),
                 value=str(df.at[idx, "id"]),
             )
         )
@@ -180,7 +202,7 @@ def _check_positive_prices(
                 severity="error",
                 message=f"Trade price must be positive; got {df.at[idx, 'price']} at row {idx}.",
                 column="price",
-                row_index=int(idx),
+                row_index=_safe_positional_index(df, idx),
                 value=df.at[idx, "price"],
             )
         )
@@ -202,7 +224,7 @@ def _check_non_negative_volumes(
                 severity="error",
                 message=f"Trade volume must be non-negative; got {df.at[idx, 'volume']} at row {idx}.",
                 column="volume",
-                row_index=int(idx),
+                row_index=_safe_positional_index(df, idx),
                 value=df.at[idx, "volume"],
             )
         )
@@ -215,7 +237,17 @@ def _check_session_time(df: pd.DataFrame, max_examples: int = 20) -> list[Qualit
         return []
     issues: list[QualityIssue] = []
     parsed = pd.to_datetime(df["time"], errors="coerce")
-    # Work in local time (no tz conversion)
+
+    # Normalise to Asia/Ho_Chi_Minh for session boundary comparison.
+    # - tz-aware timestamps: convert explicitly.
+    # - tz-naive timestamps: treat as local (Asia/Ho_Chi_Minh) without shift.
+    if parsed.dt.tz is not None:
+        try:
+            parsed = parsed.dt.tz_convert("Asia/Ho_Chi_Minh")
+        except Exception:
+            parsed = parsed.dt.tz_localize(None)
+    # (tz-naive stays as-is; assumed to be local Vietnam time already)
+
     session_open = parsed.dt.hour * 60 + parsed.dt.minute
     open_minutes = _SESSION_OPEN_HOUR * 60 + _SESSION_OPEN_MINUTE
     close_minutes = _SESSION_CLOSE_HOUR * 60 + _SESSION_CLOSE_MINUTE
@@ -228,7 +260,7 @@ def _check_session_time(df: pd.DataFrame, max_examples: int = 20) -> list[Qualit
                 severity="warning",
                 message=f"Trade time {df.at[idx, 'time']} is outside the market session.",
                 column="time",
-                row_index=int(idx),
+                row_index=_safe_positional_index(df, idx),
                 value=str(df.at[idx, "time"]),
             )
         )

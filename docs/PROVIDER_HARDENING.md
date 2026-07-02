@@ -125,6 +125,7 @@ health = score_health(
     error_rate=0.02,
     schema_status="ok",
     freshness_status="fresh",
+    capabilities_checked=["ohlcv/equity", "price_board/equity"],  # list[str], optional
 )
 
 print(health.status)   # "healthy" | "degraded" | "failing" | "unknown"
@@ -267,6 +268,10 @@ To refresh a fixture, call the real endpoint with your preferred HTTP tool, save
 ## Limitations
 
 - Drift detection compares column names and dtype prefixes only; it does not check value ranges (use the quality layer for that).
+- `detect_drift()` returns a `DRIFT_INVALID_INPUT` error issue (not a Python exception) when passed a non-DataFrame or empty provider string, ensuring it never raises.
 - Comparison is currently implemented for OHLCV only; price board and intraday comparison are not yet implemented.
+- `compare_ohlcv()` returns a `COMPARE_INVALID_INPUT` error issue when passed a non-dict or when any dict value is not a DataFrame.
 - Health scoring is purely evidence-based (no live pings); callers must supply latency/error-rate from their own measurement.
+- `score_health()` `capabilities_checked` parameter accepts `list[str] | None` (capability keys, e.g. `"ohlcv/equity"`). The legacy `int` form is no longer the intended API.
+- `ProviderComparisonReport.issues` is typed as `List[ProviderIssue]`, not `List[str]`. Downstream code that treated issues as strings must be updated.
 - Live smoke tests are not part of default CI and require external network access.

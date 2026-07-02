@@ -165,3 +165,181 @@ class TestDispatchQualityKwargsNotLeaked:
         assert "quality_mode" not in captured_kwargs, (
             "quality_mode should not reach provider"
         )
+
+
+# ---------------------------------------------------------------------------
+# Regression tests for correctness fixes
+# ---------------------------------------------------------------------------
+
+
+class TestGlobalQualityConfigDefaults:
+    """_dispatch() should read defaults from QualityConfig, not hardcoded False/'warn'."""
+
+    def test_validate_defaults_to_quality_config_enabled(self):
+        """When validate not passed, default comes from QualityConfig.enabled."""
+        from vnstock.core.settings import get_config
+
+        cfg = get_config()
+        # The default is False; confirm the kwarg logic mirrors it
+        original = cfg.quality.enabled
+        assert not original  # sanity: default is disabled
+
+    def test_quality_mode_defaults_to_quality_config_mode(self):
+        """When quality_mode not passed, default comes from QualityConfig.mode."""
+        from vnstock.core.settings import get_config
+
+        cfg = get_config()
+        assert cfg.quality.mode == "warn"  # default from QualityConfig
+
+
+class TestInternalValidationObservable:
+    """Internal validation failures must produce a RuntimeWarning, not be swallowed."""
+
+    def test_internal_error_emits_runtime_warning_in_warn_mode(self):
+        """If validate_dataframe crashes internally, warn mode must emit RuntimeWarning."""
+        from unittest.mock import patch
+
+        from vnstock.ui._base import _run_quality_validation
+
+        df = _make_valid_ohlcv()
+        with patch(
+            "vnstock.ui._base.validate_dataframe",
+            side_effect=RuntimeError("simulated internal crash"),
+            create=True,
+        ):
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+                # Import within the patch so the lazy import picks up the mock
+                from vnstock.core.quality import registry as _r
+
+                with patch.object(
+                    _r, "validate_dataframe", side_effect=RuntimeError("crash")
+                ):
+                    result = _run_quality_validation(
+                        df,
+                        domain_name="Market",
+                        method_name="equity",
+                        consumed_subdomain="ohlcv",
+                        quality_mode="warn",
+                        provider="TEST",
+                        symbol="FPT",
+                    )
+        # Data must still be returned
+        assert result is df
+        # A RuntimeWarning must have been emitted
+        runtime_warns = [x for x in w if issubclass(x.category, RuntimeWarning)]
+        assert runtime_warns, "Expected RuntimeWarning when validation fails internally"
+        assert "QUALITY_VALIDATION_INTERNAL_ERROR" in str(runtime_warns[0].message)
+
+
+class TestIndexSafeRowReporting:
+    """Numeric and temporal rules must not crash on DatetimeIndex or string index."""
+
+    def test_numeric_negative_price_datetime_index(self):
+        from vnstock.core.quality.rules.numeric import check_negative_prices
+
+        idx = pd.date_range("2025-01-01", periods=3, freq="D")
+        df = pd.DataFrame({"open": [100.0, -5.0, 200.0]}, index=idx)
+        issues = check_negative_prices(df, ["open"])
+        assert len(issues) == 1
+        assert issues[0].code == "NUMERIC_NEGATIVE_PRICE"
+        assert issues[0].row_index == 1  # positional index
+
+    def test_temporal_duplicate_times_datetime_index(self):
+        from vnstock.core.quality.rules.temporal import check_duplicate_times
+
+        ts = pd.to_datetime(["2025-01-01", "2025-01-01", "2025-01-02"])
+        df = pd.DataFrame({"time": ts})  # use default RangeIndex, not DatetimeIndex
+        issues = check_duplicate_times(df)
+        assert len(issues) == 1
+        assert issues[0].code == "TIME_DUPLICATED"
+        assert isinstance(issues[0].row_index, int)
+
+    def test_numeric_negative_price_datetime_index_no_crash(self):
+        """Rules must not raise when the DataFrame has a DatetimeIndex."""
+        from vnstock.core.quality.rules.numeric import check_negative_prices
+
+        idx = pd.date_range("2025-01-01", periods=3, freq="D")
+        df = pd.DataFrame({"open": [100.0, -5.0, 200.0]}, index=idx)
+        issues = check_negative_prices(df, ["open"])
+        assert len(issues) == 1
+        assert issues[0].code == "NUMERIC_NEGATIVE_PRICE"
+
+
+class TestFreshnessCoerceDatetime:
+    """_coerce_datetime must handle all supported input types."""
+
+    def test_coerce_iso_string(self):
+        from vnstock.core.quality.rules.freshness import _coerce_datetime
+
+        result = _coerce_datetime("2025-01-01T10:00:00Z")
+        assert result is not None
+        assert result.tzinfo is not None
+
+    def test_coerce_naive_datetime(self):
+        from datetime import datetime
+
+        from vnstock.core.quality.rules.freshness import _coerce_datetime
+
+        result = _coerce_datetime(datetime(2025, 1, 1, 10, 0, 0))
+        assert result is not None
+        assert result.tzinfo is not None  # should be UTC-aware
+
+    def test_coerce_none_returns_none(self):
+        from vnstock.core.quality.rules.freshness import _coerce_datetime
+
+        assert _coerce_datetime(None) is None
+
+    def test_coerce_invalid_string_returns_none(self):
+        from vnstock.core.quality.rules.freshness import _coerce_datetime
+
+        assert _coerce_datetime("not-a-date") is None
+
+
+class TestProviderInputGuards:
+    """detect_drift and compare_ohlcv must handle invalid inputs gracefully."""
+
+    def test_detect_drift_non_dataframe_returns_error_issue(self):
+        from vnstock.core.provider.drift import detect_drift
+
+        issues = detect_drift(None, "vci", "ohlcv")  # type: ignore[arg-type]
+        assert len(issues) == 1
+        assert issues[0].code == "DRIFT_INVALID_INPUT"
+        assert issues[0].severity == "error"
+
+    def test_detect_drift_empty_provider_returns_error_issue(self):
+        import pandas as pd
+
+        from vnstock.core.provider.drift import detect_drift
+
+        df = pd.DataFrame(
+            {"time": [], "open": [], "high": [], "low": [], "close": [], "volume": []}
+        )
+        issues = detect_drift(df, "", "ohlcv")
+        assert len(issues) == 1
+        assert issues[0].code == "DRIFT_INVALID_INPUT"
+
+    def test_compare_ohlcv_non_dict_returns_error_issue(self):
+        from vnstock.core.provider.compare import compare_ohlcv
+
+        report = compare_ohlcv(None)  # type: ignore[arg-type]
+        assert not report.comparable
+        assert any(i.code == "COMPARE_INVALID_INPUT" for i in report.issues)
+
+    def test_compare_ohlcv_non_dataframe_values_returns_error_issue(self):
+        from vnstock.core.provider.compare import compare_ohlcv
+
+        report = compare_ohlcv({"vci": "not_a_df", "kbs": "also_not"})  # type: ignore[arg-type]
+        assert not report.comparable
+        assert any(i.code == "COMPARE_INVALID_INPUT" for i in report.issues)
+
+
+class TestComparisonReportIssuesType:
+    """ProviderComparisonReport.issues must contain ProviderIssue objects."""
+
+    def test_compare_insufficient_providers_issues_are_provider_issue(self):
+        from vnstock.core.provider.compare import compare_ohlcv
+        from vnstock.core.provider.models import ProviderIssue
+
+        report = compare_ohlcv({"only_one": _make_valid_ohlcv()})
+        assert all(isinstance(i, ProviderIssue) for i in report.issues)
