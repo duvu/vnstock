@@ -2,125 +2,125 @@
 
 ## 1. Core Models
 
-- [ ] Add `vnstock/core/quality/models.py`
-- [ ] Implement `QualityIssue`
-- [ ] Implement `ValidationReport`
-- [ ] Add serialization helpers: `to_dict()`, `to_json()`
-- [ ] Add tests for report validity and severity aggregation
+- [x] Add `vnstock/core/quality/models.py`
+- [x] Implement `QualityIssue`
+- [x] Implement `ValidationReport`
+- [x] Add serialization helpers: `to_dict()`, `to_json()`
+- [x] Add tests for report validity and severity aggregation
 
 ## 2. Exceptions
 
-- [ ] Add `vnstock/core/quality/exceptions.py`
-- [ ] Implement `VnstockQualityError`
-- [ ] Implement `DataQualityError`
-- [ ] Implement `SchemaValidationError`
-- [ ] Implement `FreshnessError`
-- [ ] Add tests for strict mode exception behavior
+- [x] Add `vnstock/core/quality/exceptions.py`
+- [x] Implement `VnstockQualityError`
+- [x] Implement `DataQualityError`
+- [x] Implement `SchemaValidationError`
+- [x] Implement `FreshnessError`
+- [x] Add tests for strict mode exception behavior
 
 ## 3. Configuration
 
-- [ ] Add `QualityConfig` to `vnstock/core/settings.py`
-- [ ] Add environment variable parsing
-- [ ] Add defaults:
+- [x] Add `QualityConfig` to `vnstock/core/settings.py`
+- [x] Add environment variable parsing
+- [x] Add defaults:
   - `enabled=False`
   - `mode="warn"`
   - `attach_report=True`
-- [ ] Add tests for config defaults and env overrides
+- [x] Add tests for config defaults and env overrides
 
 ## 4. Schema Rules
 
-- [ ] Add `vnstock/core/quality/rules/schema.py`
-- [ ] Implement required column validation
-- [ ] Implement dtype validation
-- [ ] Implement empty DataFrame validation
-- [ ] Implement all-null column validation
+- [x] Add `vnstock/core/quality/rules/schema.py`
+- [x] Implement required column validation
+- [x] Implement dtype validation
+- [x] Implement empty DataFrame validation
+- [x] Implement all-null column validation
 
 ## 5. Numeric Rules
 
-- [ ] Add `vnstock/core/quality/rules/numeric.py`
-- [ ] Implement negative price checks
-- [ ] Implement negative volume checks
-- [ ] Implement null/NaN/inf checks
-- [ ] Implement suspicious price scale check
+- [x] Add `vnstock/core/quality/rules/numeric.py`
+- [x] Implement negative price checks
+- [x] Implement negative volume checks
+- [x] Implement null/NaN/inf checks
+- [x] Implement suspicious price scale check
 
 ## 6. Temporal Rules
 
-- [ ] Add `vnstock/core/quality/rules/temporal.py`
-- [ ] Implement datetime parse validation
-- [ ] Implement duplicate time detection
-- [ ] Implement monotonic time validation
-- [ ] Implement future time detection
-- [ ] Add optional missing session validation
+- [x] Add `vnstock/core/quality/rules/temporal.py`
+- [x] Implement datetime parse validation
+- [x] Implement duplicate time detection
+- [x] Implement monotonic time validation
+- [x] Implement future time detection
+- [x] Add optional missing session validation
 
 ## 7. Freshness Rules
 
-- [ ] Add `vnstock/core/quality/rules/freshness.py`
-- [ ] Implement stale price board check
-- [ ] Implement stale intraday check
-- [ ] Implement stale daily OHLCV check
-- [ ] Implement missing latest timestamp warning
+- [x] Add `vnstock/core/quality/rules/freshness.py`
+- [x] Implement stale price board check
+- [x] Implement stale intraday check
+- [x] Implement stale daily OHLCV check
+- [x] Implement missing latest timestamp warning
 
 ## 8. OHLCV Validator
 
-- [ ] Add `vnstock/core/quality/validators/ohlcv.py`
-- [ ] Validate required schema: `time`, `open`, `high`, `low`, `close`, `volume`
-- [ ] Validate OHLC consistency
-- [ ] Validate positive prices
-- [ ] Validate non-negative volume
-- [ ] Validate duplicate timestamps
-- [ ] Validate freshness metadata
-- [ ] Add unit tests
+- [x] Add `vnstock/core/quality/validators/ohlcv.py`
+- [x] Validate required schema: `time`, `open`, `high`, `low`, `close`, `volume`
+- [x] Validate OHLC consistency
+- [x] Validate positive prices
+- [x] Validate non-negative volume
+- [x] Validate duplicate timestamps
+- [x] Validate freshness metadata
+- [x] Add unit tests
 
 ## 9. Price Board Validator
 
-- [ ] Add `vnstock/core/quality/validators/price_board.py`
-- [ ] Validate required minimum schema
-- [ ] Validate duplicate symbols
-- [ ] Validate floor/reference/ceiling consistency
-- [ ] Validate bid/ask consistency
-- [ ] Validate non-negative volume fields
-- [ ] Validate freshness metadata
-- [ ] Add unit tests
+- [x] Add `vnstock/core/quality/validators/price_board.py`
+- [x] Validate required minimum schema
+- [x] Validate duplicate symbols
+- [x] Validate floor/reference/ceiling consistency
+- [x] Validate bid/ask consistency
+- [x] Validate non-negative volume fields
+- [x] Validate freshness metadata
+- [x] Add unit tests
 
 ## 10. Intraday Trade Validator
 
-- [ ] Add `vnstock/core/quality/validators/intraday.py`
-- [ ] Validate required schema: `time`, `price`, `volume`, `match_type`, `id`
-- [ ] Validate match type enum
-- [ ] Validate duplicate trade IDs
-- [ ] Validate positive prices
-- [ ] Validate non-negative volumes
-- [ ] Add optional market session validation
-- [ ] Add unit tests
+- [x] Add `vnstock/core/quality/validators/intraday.py`
+- [x] Validate required schema: `time`, `price`, `volume`, `match_type`, `id`
+- [x] Validate match type enum
+- [x] Validate duplicate trade IDs
+- [x] Validate positive prices
+- [x] Validate non-negative volumes
+- [x] Add optional market session validation
+- [x] Add unit tests
 
 ## 11. Validator Registry
 
-- [ ] Add `vnstock/core/quality/registry.py`
-- [ ] Register validators by dataset type
-- [ ] Implement `validate_dataframe(...)`
-- [ ] Add tests for unsupported dataset type behavior
+- [x] Add `vnstock/core/quality/registry.py`
+- [x] Register validators by dataset type
+- [x] Implement `validate_dataframe(...)`
+- [x] Add tests for unsupported dataset type behavior
 
 ## 12. UI/API Integration
 
-- [ ] Add `validate` and `quality_mode` kwargs handling in `BaseUI._dispatch`
-- [ ] Ensure quality kwargs do not leak into provider method calls
-- [ ] Attach `df.attrs["quality"]` when validation runs
-- [ ] Raise `DataQualityError` in strict mode
-- [ ] Add tests for `warn`, `strict`, and `off` modes
+- [x] Add `validate` and `quality_mode` kwargs handling in `BaseUI._dispatch`
+- [x] Ensure quality kwargs do not leak into provider method calls
+- [x] Attach `df.attrs["quality"]` when validation runs
+- [x] Raise `DataQualityError` in strict mode
+- [x] Add tests for `warn`, `strict`, and `off` modes
 
 ## 13. Provider Contract Tests
 
-- [ ] Add OHLCV sample contract tests for DNSE
-- [ ] Add OHLCV sample contract tests for KBS
-- [ ] Add OHLCV sample contract tests for VCI
-- [ ] Add price board sample contract tests
-- [ ] Add intraday sample contract tests
+- [x] Add OHLCV sample contract tests for DNSE
+- [x] Add OHLCV sample contract tests for KBS
+- [x] Add OHLCV sample contract tests for VCI
+- [x] Add price board sample contract tests
+- [x] Add intraday sample contract tests
 
 ## 14. Documentation
 
-- [ ] Add docs page: `docs/DATA_QUALITY.md`
-- [ ] Document validation modes
-- [ ] Document issue codes
-- [ ] Document example usage
-- [ ] Document limitations
-- [ ] Add migration note for downstream scanner users
+- [x] Add docs page: `docs/DATA_QUALITY.md`
+- [x] Document validation modes
+- [x] Document issue codes
+- [x] Document example usage
+- [x] Document limitations
+- [x] Add migration note for downstream scanner users

@@ -88,6 +88,42 @@ class CacheConfig:
 
 
 @dataclass
+class QualityConfig:
+    """Data quality validation configuration.
+
+    Environment variables:
+
+    * ``VNSTOCK_QUALITY_ENABLED`` — ``"true"``/``"false"`` (default: ``false``)
+    * ``VNSTOCK_QUALITY_MODE`` — ``"off"|"warn"|"strict"`` (default: ``"warn"``)
+    * ``VNSTOCK_QUALITY_ATTACH_REPORT`` — ``"true"``/``"false"`` (default: ``true``)
+    * ``VNSTOCK_QUALITY_STALE_PRICE_BOARD_SECONDS`` — integer (default: ``30``)
+    * ``VNSTOCK_QUALITY_STALE_INTRADAY_SECONDS`` — integer (default: ``60``)
+    * ``VNSTOCK_QUALITY_STALE_DAILY_OHLCV_HOURS`` — integer (default: ``36``)
+    * ``VNSTOCK_QUALITY_CHECK_MISSING_SESSIONS`` — ``"true"``/``"false"`` (default: ``true``)
+    * ``VNSTOCK_QUALITY_CHECK_SESSION_TIME`` — ``"true"``/``"false"`` (default: ``false``)
+    """
+
+    enabled: bool = False
+    mode: str = "warn"  # "off" | "warn" | "strict"
+    attach_report: bool = True
+    max_error_examples: int = 20
+
+    stale_price_board_seconds: int = 30
+    stale_intraday_seconds: int = 60
+    stale_daily_ohlcv_hours: int = 36
+
+    check_missing_sessions: bool = True
+    check_ohlc_consistency: bool = True
+    check_price_scale: bool = True
+    check_session_time: bool = False
+
+    def __post_init__(self):
+        """Validate configuration after initialization."""
+        if self.mode not in ("off", "warn", "strict"):
+            raise ValueError("mode must be 'off', 'warn', or 'strict'")
+
+
+@dataclass
 class VnstockConfig:
     """
     Main configuration class for vnstock.
@@ -111,6 +147,7 @@ class VnstockConfig:
     api_keys: APIKeyConfig = field(default_factory=APIKeyConfig)
     network: NetworkConfig = field(default_factory=NetworkConfig)
     cache: CacheConfig = field(default_factory=CacheConfig)
+    quality: QualityConfig = field(default_factory=QualityConfig)
     log_level: str = "INFO"
     debug_mode: bool = False
     default_source: str = "kbs"
@@ -192,6 +229,65 @@ class VnstockConfig:
         cache_path_env = os.getenv("VNSTOCK_CACHE_PATH")
         if cache_path_env:
             self.cache.path = cache_path_env
+
+        # Quality config
+        quality_enabled_env = os.getenv("VNSTOCK_QUALITY_ENABLED")
+        if quality_enabled_env:
+            self.quality.enabled = quality_enabled_env.lower() in ("true", "1", "yes")
+
+        quality_mode_env = os.getenv("VNSTOCK_QUALITY_MODE")
+        if quality_mode_env and quality_mode_env.lower() in ("off", "warn", "strict"):
+            self.quality.mode = quality_mode_env.lower()
+
+        quality_attach_env = os.getenv("VNSTOCK_QUALITY_ATTACH_REPORT")
+        if quality_attach_env:
+            self.quality.attach_report = quality_attach_env.lower() in (
+                "true",
+                "1",
+                "yes",
+            )
+
+        quality_stale_pb_env = os.getenv("VNSTOCK_QUALITY_STALE_PRICE_BOARD_SECONDS")
+        if quality_stale_pb_env:
+            try:
+                self.quality.stale_price_board_seconds = int(quality_stale_pb_env)
+            except (ValueError, TypeError):
+                pass
+
+        quality_stale_id_env = os.getenv("VNSTOCK_QUALITY_STALE_INTRADAY_SECONDS")
+        if quality_stale_id_env:
+            try:
+                self.quality.stale_intraday_seconds = int(quality_stale_id_env)
+            except (ValueError, TypeError):
+                pass
+
+        quality_stale_daily_env = os.getenv("VNSTOCK_QUALITY_STALE_DAILY_OHLCV_HOURS")
+        if quality_stale_daily_env:
+            try:
+                self.quality.stale_daily_ohlcv_hours = int(quality_stale_daily_env)
+            except (ValueError, TypeError):
+                pass
+
+        quality_missing_sessions_env = os.getenv(
+            "VNSTOCK_QUALITY_CHECK_MISSING_SESSIONS"
+        )
+        if quality_missing_sessions_env:
+            self.quality.check_missing_sessions = (
+                quality_missing_sessions_env.lower()
+                in (
+                    "true",
+                    "1",
+                    "yes",
+                )
+            )
+
+        quality_session_time_env = os.getenv("VNSTOCK_QUALITY_CHECK_SESSION_TIME")
+        if quality_session_time_env:
+            self.quality.check_session_time = quality_session_time_env.lower() in (
+                "true",
+                "1",
+                "yes",
+            )
 
     def get_api_key(self, provider: str) -> Optional[str]:
         """
