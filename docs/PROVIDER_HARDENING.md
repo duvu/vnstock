@@ -1,277 +1,285 @@
 # Provider Hardening
 
-This document describes the provider hardening layer added in `vnstock/core/provider/`. It covers capability registry, schema drift detection, cross-provider comparison, health scoring, the router integration tests, and the capability matrix.
+The provider hardening layer makes provider outputs more observable and safer to use in data collection pipelines.
+
+It lives under:
+
+```text
+vnstock/core/provider/
+```
+
+It does not fetch data by itself. It declares provider capabilities, detects schema drift, compares normalized provider outputs, scores provider health from collected evidence, and supports offline/live tests.
 
 ---
 
-## Overview
+## Current Status
 
-The provider hardening layer adds deterministic, offline-verifiable guarantees around the data pipeline:
+| Component | Module | Status |
+|---|---|---:|
+| Provider capability registry | `vnstock/core/provider/capabilities.py` | Implemented |
+| Provider models | `vnstock/core/provider/models.py` | Implemented |
+| Schema drift detection | `vnstock/core/provider/drift.py` | Implemented |
+| OHLCV cross-provider comparison | `vnstock/core/provider/compare.py` | Implemented |
+| Provider health scoring | `vnstock/core/provider/health.py` | Implemented |
+| Capability matrix | `vnstock/core/provider/matrix.py` | Implemented |
+| Offline contract tests | `tests/contracts/providers/` | Implemented |
+| Live smoke tests | `tests/live/providers/` | Implemented, disabled by default |
+| Health-aware runtime router | `vnstock/core/router.py` | Not yet integrated; router is still round-robin + cooldown |
+| Price-board / intraday comparison | `compare.py` | Planned |
 
-| Component | Module | Purpose |
-|-----------|--------|---------|
-| Capability registry | `vnstock/core/provider/capabilities.py` | Declares what each provider supports |
-| Schema drift detection | `vnstock/core/provider/drift.py` | Detects when adapter output deviates from baseline schema |
-| Cross-provider comparison | `vnstock/core/provider/compare.py` | Compares OHLCV DataFrames from multiple providers |
-| Health scoring | `vnstock/core/provider/health.py` | Derives a health snapshot from collected issues |
-| Capability matrix | `vnstock/core/provider/matrix.py` | Builds and renders a provider × capability support table |
-| Provider models | `vnstock/core/provider/models.py` | `ProviderCapability`, `ProviderIssue`, `ProviderHealth`, `ProviderComparisonReport` |
+---
+
+## Registered Providers
+
+Provider capabilities currently cover the implemented data-source surface:
+
+| Provider | Main use |
+|---|---|
+| KBS | Vietnam equity/index OHLCV, price board, intraday, reference/fundamental APIs |
+| VCI | Vietnam equity/index OHLCV, price board, intraday, industry/index data |
+| DNSE | Vietnam equity OHLCV and price board; intraday is treated as auth/availability constrained |
+| MSN | Global/search and selected global OHLCV use cases |
+| FMP | Auth-gated global OHLCV via FMP API key |
+| FMARKET | Fund NAV and fund data |
+
+SSI and ABS are **not implemented providers**. They remain discovery candidates until public/credential strategy, raw samples, and contract feasibility are confirmed.
 
 ---
 
 ## Capability Registry
 
-`CAPABILITIES` is a list of `ProviderCapability` frozen dataclasses, one per (provider, dataset_type, asset_class) combination.
+Use capability queries to inspect what a provider claims to support.
 
 ```python
 from vnstock.core.provider.capabilities import query_capabilities
 
-# All VCI OHLCV capabilities
-caps = query_capabilities(provider="VCI", dataset_type="ohlcv")
+# All equity OHLCV providers
+caps = query_capabilities(dataset_type="ohlcv", asset_class="equity")
 
-# All equity capabilities across providers
-equity_caps = query_capabilities(asset_class="equity")
+# DNSE-specific capabilities
+caps_dnse = query_capabilities(provider="DNSE")
 ```
 
-Registered providers: **KBS**, **VCI**, **DNSE**, **MSN**, **FMP**, **FMARKET**.
+Each capability is represented by `ProviderCapability`, including:
+
+```text
+provider
+dataset_type
+asset_class
+method
+intervals
+supports_batch
+supports_intraday
+supports_history
+supports_live_snapshot
+requires_auth
+is_live_testable
+notes
+```
+
+Capability declarations are not a substitute for tests. They describe expected support and must be kept aligned with fixtures, live smoke checks, and actual provider behavior.
 
 ---
 
 ## Schema Drift Detection
 
-Use `detect_drift()` to compare a normalized DataFrame against the stored baseline schema for a provider.
+`detect_drift()` compares a normalized provider DataFrame against a stored baseline schema.
 
 ```python
 from vnstock.core.provider.drift import detect_drift
 
-issues = detect_drift(df, provider="vci", dataset_type="ohlcv")
+issues = detect_drift(df, provider="KBS", dataset_type="ohlcv")
+
 for issue in issues:
-    print(f"[{issue.severity}] {issue.code}: {issue.message}")
+    print(issue.severity, issue.code, issue.message)
 ```
 
-Issue codes:
+Important issue codes:
 
-| Code | Severity | Meaning |
-|------|----------|---------|
-| `DRIFT_MISSING_COLUMN` | error | Required column absent from DataFrame |
-| `DRIFT_DTYPE_MISMATCH` | error/warning | Column dtype differs from baseline |
-| `DRIFT_UNEXPECTED_NULLS` | warning | Non-nullable column contains NaN |
-| `DRIFT_ROW_COUNT_LOW` | warning | Fewer rows than `min_rows` |
-| `DRIFT_ROW_COUNT_HIGH` | warning | More rows than `max_rows` |
-| `DRIFT_NO_BASELINE` | info | No baseline registered for this provider/dataset_type |
+| Code | Meaning |
+|---|---|
+| `DRIFT_INVALID_INPUT` | Non-DataFrame input or invalid provider argument |
+| `DRIFT_NO_BASELINE` | No baseline registered for provider/dataset combination |
+| `DRIFT_MISSING_COLUMN` | Required column missing from normalized output |
+| `DRIFT_DTYPE_MISMATCH` | Column dtype differs from baseline expectation |
+| `DRIFT_UNEXPECTED_NULLS` | Non-nullable field contains null values |
+| `DRIFT_ROW_COUNT_LOW` | Too few rows relative to baseline expectation |
+| `DRIFT_ROW_COUNT_HIGH` | Too many rows relative to baseline expectation |
 
-### Custom schemas
-
-```python
-from vnstock.core.provider.drift import DatasetSchema, ColumnSpec, register_schema
-
-register_schema(DatasetSchema(
-    dataset_type="my_type",
-    provider="my_provider",
-    columns=[ColumnSpec("price", "float64"), ColumnSpec("volume", "int64")],
-    min_rows=1,
-))
-```
+Current limitation: drift detection checks schema and dtype shape. Value-level correctness should be handled by the data quality layer.
 
 ---
 
 ## Cross-Provider Comparison
 
-Use `compare_ohlcv()` to find divergences between providers on the same symbol/interval.
+Current implementation supports OHLCV comparison.
 
 ```python
 from vnstock.core.provider.compare import compare_ohlcv
 
 report = compare_ohlcv(
-    {"vci": vci_df, "kbs": kbs_df, "dnse": dnse_df},
+    {
+        "KBS": kbs_df,
+        "VCI": vci_df,
+        "DNSE": dnse_df,
+    },
     symbol="FPT",
     interval="1D",
-    start="2026-01-01",
-    end="2026-06-30",
+    start="2024-01-01",
+    end="2024-06-30",
 )
 
-print(report.comparable)        # True / False
+print(report.comparable)
 print(report.price_diff_summary)
+
 for issue in report.issues:
     print(issue.code, issue.message)
 ```
 
-Issue codes:
+Important issue codes:
 
-| Code | Severity | Meaning |
-|------|----------|---------|
-| `COMPARE_INSUFFICIENT_PROVIDERS` | warning | Need at least 2 providers to compare |
-| `COMPARE_COVERAGE_GAP` | warning | Provider missing ≥ 20 % of base-provider dates |
-| `COMPARE_NO_COMMON_DATES` | error | No overlapping dates between providers |
-| `COMPARE_PRICE_DIVERGENCE` | warning | Max close diff ≥ 1 % (configurable) |
-| `COMPARE_PRICE_DIVERGENCE_HIGH` | error | Max close diff ≥ 5 % (configurable) |
-| `COMPARE_VOLUME_DIVERGENCE` | warning | Max volume diff ≥ 10 % (configurable) |
+| Code | Meaning |
+|---|---|
+| `COMPARE_INVALID_INPUT` | Input is not a dict or provider value is not a DataFrame |
+| `COMPARE_INSUFFICIENT_PROVIDERS` | Fewer than two providers supplied |
+| `COMPARE_COVERAGE_GAP` | Provider misses too many base-provider dates |
+| `COMPARE_NO_COMMON_DATES` | Providers have no overlapping time index |
+| `COMPARE_PRICE_DIVERGENCE` | Price difference exceeds warning threshold |
+| `COMPARE_PRICE_DIVERGENCE_HIGH` | Price difference exceeds error threshold |
+| `COMPARE_VOLUME_DIVERGENCE` | Volume difference exceeds warning threshold |
+
+Current limitations:
+
+- comparison is OHLCV-only
+- price board comparison is planned
+- intraday comparison is planned
+- provider-specific tolerances should be expanded before using comparison as a production acceptance gate
 
 ---
 
-## Health Scoring
+## Provider Health Scoring
 
-Use `score_health()` to derive a `ProviderHealth` snapshot from collected evidence.
+`score_health()` derives a `ProviderHealth` snapshot from collected issues and optional runtime evidence.
 
 ```python
-from vnstock.core.provider.health import score_health, aggregate_health
-from vnstock.core.provider.drift import detect_drift
+from vnstock.core.provider.health import score_health
 
-drift_issues = detect_drift(df, "vci", "ohlcv")
 health = score_health(
-    "vci",
-    drift_issues,
+    provider="KBS",
+    issues=issues,
     latency_ms=250.0,
     error_rate=0.02,
     schema_status="ok",
     freshness_status="fresh",
-    capabilities_checked=["ohlcv/equity", "price_board/equity"],  # list[str], optional
+    capabilities_checked=["ohlcv/equity", "price_board/equity"],
 )
 
-print(health.status)   # "healthy" | "degraded" | "failing" | "unknown"
-print(health.to_json())
+print(health.status)  # healthy | degraded | failing | unknown
 ```
 
-Status thresholds:
+Status rules are evidence-based:
 
-| Condition | Status |
-|-----------|--------|
-| Any error-severity issue | `failing` |
-| `latency_ms >= 10000` | `failing` |
-| `error_rate >= 0.50` | `failing` |
-| Any warning-severity issue | `degraded` |
-| `latency_ms >= 3000` | `degraded` |
-| `error_rate >= 0.10` | `degraded` |
-| Otherwise | `healthy` |
+| Evidence | Status effect |
+|---|---|
+| Error-severity issue | failing |
+| High latency | degraded or failing depending threshold |
+| High error rate | degraded or failing depending threshold |
+| Warning-severity issue | degraded |
+| No negative evidence | healthy |
+
+Current limitation: this is not yet wired into runtime source selection. `vnstock/core/router.py` currently uses round-robin selection with provider cooldown after runtime failures.
 
 ---
 
-## Capability Matrix
+## Offline Contract Tests
 
-```python
-from vnstock.core.provider.matrix import build_matrix, render_matrix_text
+Offline provider contract tests live under:
 
-matrix_dict = build_matrix(providers=["VCI", "KBS", "DNSE"])
-print(render_matrix_text(matrix_dict))
+```text
+tests/contracts/providers/
 ```
 
-Filter by provider, dataset_type, or asset_class:
+They use stored fixtures under:
 
-```python
-matrix_dict = build_matrix(
-    providers=["VCI", "KBS"],
-    dataset_types=["ohlcv", "intraday_trades"],
-    asset_classes=["equity"],
-)
+```text
+tests/fixtures/providers/
 ```
 
----
-
-## Contract Tests
-
-Provider contract tests live under `tests/contracts/providers/`. They:
-
-- Load stored JSON fixtures from `tests/fixtures/providers/{dnse,kbs,vci}/`
-- Patch `send_request` to return the fixture (no live HTTP calls)
-- Assert the adapter produces a normalized DataFrame with expected columns and dtypes
-
-Run them with:
+Run:
 
 ```bash
-PYTHONPATH=. pytest tests/contracts/providers/ -v
+PYTHONPATH=. pytest tests/contracts/providers -q
 ```
 
-They are included in the default CI suite (`tests/contracts/`).
+Offline contract tests should fail when adapter imports or normalized schema contracts drift. They should not silently skip broken provider interfaces.
 
 ---
 
 ## Live Smoke Tests
 
-Live smoke tests verify real provider endpoints. They are **disabled by default** and excluded from normal CI.
+Live smoke tests live under:
 
-### Location
-
-```
+```text
 tests/live/providers/
-├── conftest.py            # env-var gating, provider/symbol filtering, auto-skip
-├── test_dnse_live.py      # DNSE OHLCV, price board, intraday
-├── test_kbs_live.py       # KBS OHLCV, price board
-└── test_vci_live.py       # VCI OHLCV, price board
 ```
 
-### Enabling live tests
+They are disabled by default and require explicit env enablement:
 
 ```bash
-VNSTOCK_LIVE_TESTS=true pytest tests/live/providers -m live -v
+VNSTOCK_LIVE_TESTS=true PYTHONPATH=. pytest tests/live/providers -m live -v
 ```
 
-### Filtering by provider or symbol
+Filters:
 
 ```bash
-# Only test DNSE
 VNSTOCK_LIVE_TESTS=true VNSTOCK_LIVE_PROVIDERS=DNSE pytest tests/live/providers -m live
-
-# Only test with FPT
 VNSTOCK_LIVE_TESTS=true VNSTOCK_LIVE_SYMBOLS=FPT pytest tests/live/providers -m live
 ```
 
-| Env var | Default | Description |
-|---------|---------|-------------|
-| `VNSTOCK_LIVE_TESTS` | `false` | Set to `true` to enable live tests |
-| `VNSTOCK_LIVE_PROVIDERS` | `DNSE,KBS,VCI` | Comma-separated providers to test |
-| `VNSTOCK_LIVE_SYMBOLS` | `FPT,VCB,TCB` | Comma-separated symbols to use |
-
-### Safety rules
-
-- Each test uses only the **first symbol** from `VNSTOCK_LIVE_SYMBOLS` to minimise request count.
-- Date ranges are short (≤ 1 month) to avoid large responses.
-- Tests that return empty data on non-trading days call `pytest.skip()` rather than failing.
-- Never run live tests against real provider endpoints in normal CI pipelines.
-
-### Scheduled / manual CI workflow
-
-A separate GitHub Actions workflow (`.github/workflows/ci.yml`, job `live-smoke`) can run live tests on demand or on a schedule:
-
-```bash
-VNSTOCK_LIVE_TESTS=true PYTHONPATH=. pytest tests/live/providers -m live --tb=short
-```
-
-This workflow is triggered manually (`workflow_dispatch`) and is not required for PR merges.
+Live tests are not part of the default CI job. They are intended for manual or separately scheduled verification because they call real provider endpoints.
 
 ---
 
-## Fixtures
+## Foreign Investor Data
 
-Stored raw API responses live under `tests/fixtures/providers/`:
+Foreign investor fields are currently exposed mainly in price board snapshots:
 
-```
-tests/fixtures/providers/
-├── README.md          # how to update fixtures
-├── dnse/
-│   ├── ohlcv_daily_raw.json
-│   ├── price_board_raw.json
-│   └── intraday_raw.json
-├── kbs/
-│   ├── ohlcv_daily_raw.json
-│   ├── price_board_raw.json
-│   └── intraday_raw.json
-└── vci/
-    ├── ohlcv_daily_raw.json
-    ├── price_board_raw.json
-    └── intraday_raw.json
+```text
+foreign_buy_volume
+foreign_sell_volume
+foreign_room
 ```
 
-To refresh a fixture, call the real endpoint with your preferred HTTP tool, save the raw JSON, and verify the contract tests still pass.
+This is not yet a first-class `foreign_flow` dataset. A historical daily foreign-flow dataset should be added only after endpoint feasibility, fixtures, contract tests, and quality contracts are defined.
 
 ---
 
-## Limitations
+## Recommended Provider-Onboarding Gate
 
-- Drift detection compares column names and dtype prefixes only; it does not check value ranges (use the quality layer for that).
-- `detect_drift()` returns a `DRIFT_INVALID_INPUT` error issue (not a Python exception) when passed a non-DataFrame or empty provider string, ensuring it never raises.
-- Comparison is currently implemented for OHLCV only; price board and intraday comparison are not yet implemented.
-- `compare_ohlcv()` returns a `COMPARE_INVALID_INPUT` error issue when passed a non-dict or when any dict value is not a DataFrame.
-- Health scoring is purely evidence-based (no live pings); callers must supply latency/error-rate from their own measurement.
-- `score_health()` `capabilities_checked` parameter accepts `list[str] | None` (capability keys, e.g. `"ohlcv/equity"`). The legacy `int` form is no longer the intended API.
-- `ProviderComparisonReport.issues` is typed as `List[ProviderIssue]`, not `List[str]`. Downstream code that treated issues as strings must be updated.
-- Live smoke tests are not part of default CI and require external network access.
+A new provider should not be merged until it has:
+
+1. explicit data-only scope
+2. no broker login/order/account APIs in core provider path
+3. verified endpoint discovery or official API documentation
+4. raw fixtures for core endpoints
+5. normalized DataFrame schema
+6. capability declarations
+7. drift baselines
+8. contract tests
+9. live smoke tests if the endpoint can be tested safely
+10. roadmap/docs updates
+
+For credentialed official APIs, credentials must be supplied through environment variables or caller config. Never commit credentials or account-specific samples.
+
+---
+
+## Roadmap Notes
+
+Next provider-hardening work:
+
+- integrate provider health into router or batch diagnostics
+- add price board comparison
+- add intraday comparison
+- add dedicated live smoke workflow
+- add `foreign_flow` dataset discovery/spec
+- expand quality contracts beyond market data into reference and fundamental datasets
