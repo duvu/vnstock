@@ -23,19 +23,19 @@ The original DNSE connector (`vnstock/connector/dnse/`) was removed during the b
 
 ### D1: Use `explorer/dnse/` not `connector/dnse/`
 
-**Chosen**: `vnstock/explorer/dnse/`  
-**Rationale**: DNSE market data endpoints are publicly accessible (no login required). All public-endpoint providers live in `explorer/`. The `connector/` layer is reserved for API-key-gated or auth-gated services (FMP). Mixing concerns in `connector/` would break the architectural boundary.  
+**Chosen**: `vnstock/explorer/dnse/`
+**Rationale**: DNSE market data endpoints are publicly accessible (no login required). All public-endpoint providers live in `explorer/`. The `connector/` layer is reserved for API-key-gated or auth-gated services (FMP). Mixing concerns in `connector/` would break the architectural boundary.
 **Alternative**: Extend `connector/dnse/` — rejected because it implies credential management that does not apply to public endpoints.
 
 ### D2: Consistent output schema with KBS/VCI
 
-**Chosen**: Rename all raw DNSE API fields to standard column names (`time`, `open`, `high`, `low`, `close`, `volume`) via `_OHLC_MAP` in `const.py`.  
+**Chosen**: Rename all raw DNSE API fields to standard column names (`time`, `open`, `high`, `low`, `close`, `volume`) via `_OHLC_MAP` in `const.py`.
 **Rationale**: Callers who switch `source=` must receive structurally identical DataFrames. Any DNSE-specific extra fields should be available only via `get_all=True`, matching KBS/VCI behavior.
 
 ### D3: Price unit normalization
 
-**Chosen**: DNSE API returns prices in actual VND (not VND×1000 like KBS). No division is needed; values are returned as-is.  
-**Rationale**: KBS divides by 1000 because its internal representation uses thousands. DNSE native values are already in VND. Applying the KBS divisor would produce incorrect prices.  
+**Chosen**: DNSE API returns prices in actual VND (not VND×1000 like KBS). No division is needed; values are returned as-is.
+**Rationale**: KBS divides by 1000 because its internal representation uses thousands. DNSE native values are already in VND. Applying the KBS divisor would produce incorrect prices.
 **Alternative**: Divide by 1000 for consistency with KBS raw format — rejected because the standard output is VND (not raw API format), so KBS and DNSE outputs should both arrive in VND.
 
 ### D4: DNSE API endpoints
@@ -84,16 +84,16 @@ Add DNSE as an alternative source for existing MAP keys (do not add new domains)
 
 ## Risks / Trade-offs
 
-**[Risk] DNSE API is undocumented / changes silently**  
+**[Risk] DNSE API is undocumented / changes silently**
 → Mitigation: Pin tested endpoint paths in `const.py` with version comments. Add integration test smoke-checking a known stable ticker (e.g., `VCB`).
 
-**[Risk] DNSE endpoint availability depends on market hours**  
+**[Risk] DNSE endpoint availability depends on market hours**
 → Mitigation: Intraday tick endpoint only returns data for a given `date`; history endpoint works outside market hours for past data. Document limitation in docstrings.
 
-**[Risk] Output schema drift if DNSE adds/removes response fields**  
+**[Risk] Output schema drift if DNSE adds/removes response fields**
 → Mitigation: Column renames via `_OHLC_MAP` act as a projection; unknown fields are dropped. The `get_all=True` flag can expose additional fields without breaking default output.
 
-**[Trade-off] Third data source increases test surface**  
+**[Trade-off] Third data source increases test surface**
 → Accepted: Unit tests mock HTTP responses and do not require live access. Integration tests are `@pytest.mark.integration` and opt-in.
 
 ## Migration Plan
