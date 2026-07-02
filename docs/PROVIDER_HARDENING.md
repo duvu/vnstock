@@ -186,7 +186,56 @@ They are included in the default CI suite (`tests/contracts/`).
 
 ## Live Smoke Tests
 
-Live smoke tests (Tasks 32–46) are tagged `@pytest.mark.live` and excluded from default CI (`-m "not slow"`). They require live network access to real provider endpoints and are intended for manual verification or a separate scheduled job.
+Live smoke tests verify real provider endpoints. They are **disabled by default** and excluded from normal CI.
+
+### Location
+
+```
+tests/live/providers/
+├── conftest.py            # env-var gating, provider/symbol filtering, auto-skip
+├── test_dnse_live.py      # DNSE OHLCV, price board, intraday
+├── test_kbs_live.py       # KBS OHLCV, price board
+└── test_vci_live.py       # VCI OHLCV, price board
+```
+
+### Enabling live tests
+
+```bash
+VNSTOCK_LIVE_TESTS=true pytest tests/live/providers -m live -v
+```
+
+### Filtering by provider or symbol
+
+```bash
+# Only test DNSE
+VNSTOCK_LIVE_TESTS=true VNSTOCK_LIVE_PROVIDERS=DNSE pytest tests/live/providers -m live
+
+# Only test with FPT
+VNSTOCK_LIVE_TESTS=true VNSTOCK_LIVE_SYMBOLS=FPT pytest tests/live/providers -m live
+```
+
+| Env var | Default | Description |
+|---------|---------|-------------|
+| `VNSTOCK_LIVE_TESTS` | `false` | Set to `true` to enable live tests |
+| `VNSTOCK_LIVE_PROVIDERS` | `DNSE,KBS,VCI` | Comma-separated providers to test |
+| `VNSTOCK_LIVE_SYMBOLS` | `FPT,VCB,TCB` | Comma-separated symbols to use |
+
+### Safety rules
+
+- Each test uses only the **first symbol** from `VNSTOCK_LIVE_SYMBOLS` to minimise request count.
+- Date ranges are short (≤ 1 month) to avoid large responses.
+- Tests that return empty data on non-trading days call `pytest.skip()` rather than failing.
+- Never run live tests against real provider endpoints in normal CI pipelines.
+
+### Scheduled / manual CI workflow
+
+A separate GitHub Actions workflow (`.github/workflows/ci.yml`, job `live-smoke`) can run live tests on demand or on a schedule:
+
+```bash
+VNSTOCK_LIVE_TESTS=true PYTHONPATH=. pytest tests/live/providers -m live --tb=short
+```
+
+This workflow is triggered manually (`workflow_dispatch`) and is not required for PR merges.
 
 ---
 

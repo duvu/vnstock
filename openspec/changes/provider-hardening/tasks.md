@@ -45,24 +45,24 @@
 
 ## 5. Live Smoke Test Infrastructure
 
-- [ ] Add `tests/live/providers/`
-- [ ] Add `VNSTOCK_LIVE_TESTS` gating
-- [ ] Add `VNSTOCK_LIVE_PROVIDERS` filtering
-- [ ] Add `VNSTOCK_LIVE_SYMBOLS` filtering
-- [ ] Add pytest markers: `live`, `provider`, `provider_dnse`, `provider_kbs`, `provider_vci`
-- [ ] Add skip behavior when live tests are disabled
-- [ ] Add documentation for safe live test execution
+- [x] Add `tests/live/providers/`
+- [x] Add `VNSTOCK_LIVE_TESTS` gating
+- [x] Add `VNSTOCK_LIVE_PROVIDERS` filtering
+- [x] Add `VNSTOCK_LIVE_SYMBOLS` filtering
+- [x] Add pytest markers: `live`, `provider`, `provider_dnse`, `provider_kbs`, `provider_vci`
+- [x] Add skip behavior when live tests are disabled
+- [x] Add documentation for safe live test execution
 
 ## 6. Live Smoke Tests
 
-- [ ] Add DNSE live OHLCV smoke test
-- [ ] Add DNSE live price board smoke test
-- [ ] Add DNSE live intraday smoke test where endpoint supports it
-- [ ] Add KBS live OHLCV smoke test
-- [ ] Add KBS live price board smoke test
-- [ ] Add VCI live OHLCV smoke test
-- [ ] Add VCI live price board smoke test
-- [ ] Keep all live tests small and rate-limit friendly
+- [x] Add DNSE live OHLCV smoke test
+- [x] Add DNSE live price board smoke test
+- [x] Add DNSE live intraday smoke test where endpoint supports it
+- [x] Add KBS live OHLCV smoke test
+- [x] Add KBS live price board smoke test
+- [x] Add VCI live OHLCV smoke test
+- [x] Add VCI live price board smoke test
+- [x] Keep all live tests small and rate-limit friendly
 
 ## 7. Schema Drift Detection
 

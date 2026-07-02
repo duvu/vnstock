@@ -1,21 +1,7 @@
 # vnstock Roadmap — Data-Only Market Data Layer
 
-> Goal: make `vnstock` a first-class **data extraction and validation library** for Vietnamese and global market data research.
->
-> Architecture constraint: **data extraction only**. No user registration, no broker execution, no order placement, no portfolio management, no trading strategy engine.
-
----
-
-## Roadmap Review — 2026-07-02
-
-Recent implementation added two major foundations:
-
-1. **Data Quality Layer** — schema, numeric, temporal, freshness, OHLCV, price board, and intraday validation.
-2. **Provider Hardening Layer** — capability registry, contract fixtures/tests, schema drift detection, cross-provider OHLCV comparison, health scoring, and capability matrix.
-
-CI now passes for Ruff, format, pytest, and build across Python 3.10–3.13. However, code review identified correctness issues that must be fixed before building scanner, batch, watcher, or storage features on top of these layers.
-
-The roadmap is therefore updated to prioritize **correctness and runtime robustness before new trading-data capabilities**.
+> Goal: make `vnstock` a first-class data extraction library for algo-trading and quantitative finance on Vietnamese and global markets.
+> Architecture constraint: data extraction only, flat/open access, no user registration, no broker execution.
 
 ---
 

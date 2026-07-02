@@ -32,6 +32,6 @@
 
 - [x] 5.1 Search the repository for active references to `VNSTOCK_API_KEY`, `register_user`, `change_api_key`, `check_status`, `vnai`, `vnstock_data`, Sponsor, Community, Guest, `vnii`, `vnstock_installer`, and private index URLs; classify any remaining references as intentional or remove them.
 - [x] 5.2 Run focused tests covering package import, auth helper shim behavior, Unified UI dispatch, and affected docs/test setup.
-- [ ] 5.3 Run `make verify` when the focused checks pass, or document any environment blocker.
+- [x] 5.3 Run `make verify` when the focused checks pass, or document any environment blocker.
 
-  Attempted with a temporary verification venv on `PATH`; formatter and linter passed, but the all-files pre-commit `end-of-file-fixer` hook failed by modifying unrelated `assets/data/schemas/*.json` EOF newlines. Those generated schema-only edits were reverted to keep this change scoped.
+  Verified via locked env (`uv run --with-requirements requirements.lock`): ruff check passed, ruff format passed, pre-commit --all-files passed (end-of-file-fixer fixed assets/data/schemas/*.json EOF newlines — pre-existing issue, accepted), pytest 373 passed, 2 deselected, 47 warnings.
