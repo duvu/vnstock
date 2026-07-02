@@ -1,239 +1,285 @@
 # Data Quality Layer
 
-`vnstock` includes a built-in data quality layer that validates returned `DataFrame` objects before they reach downstream code. Validation is **opt-in** by default and does not change existing behaviour unless explicitly enabled.
+The data quality layer validates normalized market-data `DataFrame` outputs before they are consumed by downstream ingestion, storage, comparison, or scanner workflows.
+
+It lives under:
+
+```text
+vnstock/core/quality/
+```
+
+It is designed for **diagnostics and safety**, not data repair. Validators report issues; they do not mutate or fix market data values.
 
 ---
 
-## Validation Modes
+## Current Status
 
-| Mode | Behaviour |
+| Dataset | Status |
 |---|---|
-| `off` | No validation. Default when `validate` kwarg is absent and `VNSTOCK_QUALITY_ENABLED=false` (the default). |
-| `warn` | Run validation, attach `ValidationReport` to `df.attrs["quality"]`, emit a `UserWarning` when errors are found. Does not raise. |
-| `strict` | Run validation, raise `DataQualityError` if the report contains at least one error. |
+| `ohlcv` | Implemented |
+| `price_board` | Implemented |
+| `intraday_trades` | Implemented |
+| `reference` | Planned |
+| `fundamental` | Planned |
 
-Enable globally via environment variable:
+The first implemented scope is market data because it is the foundation for provider comparison, ingestion, storage, and scanner workflows.
+
+---
+
+## Enabling Validation
+
+Validation is disabled by default.
+
+Per-call enablement:
+
+```python
+from vnstock import Market
+
+market = Market()
+
+df = market.equity.ohlcv(
+    symbol="FPT",
+    start="2024-01-01",
+    end="2024-06-30",
+    validate=True,
+    quality_mode="warn",
+)
+
+report = df.attrs.get("quality")
+```
+
+Global enablement:
 
 ```bash
 export VNSTOCK_QUALITY_ENABLED=true
-export VNSTOCK_QUALITY_MODE=warn   # or strict
+export VNSTOCK_QUALITY_MODE=warn
+export VNSTOCK_QUALITY_ATTACH_REPORT=true
 ```
 
-Or enable per-call:
+Supported modes:
 
-```python
-df = Market().equity("FPT").ohlcv(
-    start="2025-01-01",
-    end="2026-07-02",
-    source="DNSE",
-    validate=True,
-    quality_mode="warn",   # default when validate=True
-)
-```
-
----
-
-## Using the Validation Report
-
-When `validate=True` and `quality_mode` is `"warn"` or `"strict"`, the `ValidationReport` is attached to `df.attrs["quality"]`:
-
-```python
-report = df.attrs["quality"]
-
-print(report.valid)           # True / False
-print(report.severity)        # "info" | "warning" | "error"
-print(report.row_count)       # number of rows validated
-
-for issue in report.errors:
-    print(issue.code, issue.message, issue.column, issue.row_index)
-
-for issue in report.warnings:
-    print(issue.code, issue.message)
-```
-
-Serialize for logging:
-
-```python
-import json
-print(json.dumps(report.to_dict(), indent=2))
-```
-
----
-
-## Direct Validation API
-
-Validate any `DataFrame` directly without going through the UI layer:
-
-```python
-from vnstock.core.quality import validate_dataframe
-
-report = validate_dataframe(
-    df,
-    dataset_type="ohlcv",   # "ohlcv" | "price_board" | "intraday_trades"
-    provider="DNSE",
-    symbol="FPT",
-    interval="1D",
-)
-```
-
----
-
-## Issue Codes
-
-### Schema
-
-| Code | Severity | Description |
-|---|---|---|
-| `SCHEMA_MISSING_COLUMN` | error | A required column is absent. |
-| `SCHEMA_EMPTY_DATAFRAME` | error | DataFrame has zero rows. |
-| `SCHEMA_INVALID_DTYPE` | warning | Column has unexpected dtype kind. |
-| `SCHEMA_COLUMN_ALL_NULL` | warning | Column is entirely null/NaN. |
-
-### Numeric
-
-| Code | Severity | Description |
-|---|---|---|
-| `NUMERIC_NEGATIVE_PRICE` | error | Price column has a negative value. |
-| `NUMERIC_NEGATIVE_VOLUME` | error | Volume column has a negative value. |
-| `NUMERIC_NULL_VALUE` | warning | Numeric column has null/NaN. |
-| `NUMERIC_INF_VALUE` | error | Numeric column has infinite value. |
-| `OHLC_PRICE_SCALE_SUSPICIOUS` | warning | Price value outside plausible range (100–200,000,000 VND). |
-
-### OHLC Consistency
-
-| Code | Severity | Description |
-|---|---|---|
-| `OHLC_HIGH_BELOW_LOW` | error | `high < low`. |
-| `OHLC_HIGH_BELOW_OPEN` | error | `high < open`. |
-| `OHLC_HIGH_BELOW_CLOSE` | error | `high < close`. |
-| `OHLC_LOW_ABOVE_OPEN` | error | `low > open`. |
-| `OHLC_LOW_ABOVE_CLOSE` | error | `low > close`. |
-
-### Temporal
-
-| Code | Severity | Description |
-|---|---|---|
-| `TIME_MISSING` | warning | Null timestamp in time column. |
-| `TIME_INVALID` | error | Timestamp could not be parsed. |
-| `TIME_DUPLICATED` | warning | Duplicate timestamp in time column. |
-| `TIME_NOT_MONOTONIC` | warning | Time column is not monotonically increasing. |
-| `TIME_FUTURE_VALUE` | warning | Timestamp is in the future. |
-| `TIME_MISSING_SESSIONS` | info | Expected trading session date is absent. |
-
-### Price Board
-
-| Code | Severity | Description |
-|---|---|---|
-| `BOARD_DUPLICATE_SYMBOL` | warning | Same ticker appears more than once. |
-| `BOARD_PRICE_OUTSIDE_FLOOR_CEILING` | error | `close_price` or `reference_price` is outside `[floor, ceiling]`. |
-| `BOARD_MISSING_REFERENCE_PRICE` | warning | `reference_price` is outside the price band. |
-| `BOARD_BID_ASK_CROSSED` | warning | Best bid price exceeds best ask price. |
-| `BOARD_NEGATIVE_BID_VOLUME` | error | Bid volume is negative. |
-| `BOARD_NEGATIVE_ASK_VOLUME` | error | Ask volume is negative. |
-
-### Intraday Trades
-
-| Code | Severity | Description |
-|---|---|---|
-| `TRADE_INVALID_MATCH_TYPE` | error | `match_type` is not one of `buy`, `sell`, `unknown`, `ato`, `atc`. |
-| `TRADE_DUPLICATE_ID` | warning | Duplicate `id` value. |
-| `TRADE_SYNTHETIC_ID` | info | Trade `id` was synthesized (not provided by the exchange). |
-| `TRADE_NON_POSITIVE_PRICE` | error | Trade price is zero or negative. |
-| `TRADE_NEGATIVE_VOLUME` | error | Trade volume is negative. |
-| `TRADE_TIME_OUTSIDE_SESSION` | warning | Trade time falls outside the configured market session window. |
-
-### Freshness
-
-| Code | Severity | Description |
-|---|---|---|
-| `FRESHNESS_STALE` | warning | Data age exceeds the configured staleness threshold. |
-| `FRESHNESS_LATEST_TIME_MISSING` | warning | No parseable timestamp found to evaluate freshness. |
-| `FRESHNESS_FETCHED_AT_MISSING` | warning | No `fetched_at` metadata and no row timestamps. |
-
----
-
-## Configuration
-
-All configuration lives in `QualityConfig` (part of `vnstock.core.settings`):
-
-| Setting | Default | Env var |
-|---|---|---|
-| `enabled` | `False` | `VNSTOCK_QUALITY_ENABLED` |
-| `mode` | `"warn"` | `VNSTOCK_QUALITY_MODE` |
-| `attach_report` | `True` | `VNSTOCK_QUALITY_ATTACH_REPORT` |
-| `max_error_examples` | `20` | — |
-| `stale_price_board_seconds` | `30` | `VNSTOCK_QUALITY_STALE_PRICE_BOARD_SECONDS` |
-| `stale_intraday_seconds` | `60` | `VNSTOCK_QUALITY_STALE_INTRADAY_SECONDS` |
-| `stale_daily_ohlcv_hours` | `36` | `VNSTOCK_QUALITY_STALE_DAILY_OHLCV_HOURS` |
-| `check_missing_sessions` | `True` | `VNSTOCK_QUALITY_CHECK_MISSING_SESSIONS` |
-| `check_session_time` | `False` | `VNSTOCK_QUALITY_CHECK_SESSION_TIME` |
-
----
-
-## Strict Mode Example
-
-```python
-from vnstock.core.quality.exceptions import DataQualityError
-
-try:
-    df = Market().equity("FPT").ohlcv(
-        start="2025-01-01",
-        end="2026-07-02",
-        source="DNSE",
-        validate=True,
-        quality_mode="strict",
-    )
-except DataQualityError as e:
-    print("Validation failed:", e.report.severity)
-    for err in e.report.errors:
-        print(f"  [{err.code}] {err.message}")
-```
-
----
-
-## Supported Dataset Types
-
-| `dataset_type` | Description |
+| Mode | Behavior |
 |---|---|
-| `ohlcv` | OHLCV bar data (daily, weekly, intraday bars) |
-| `price_board` | Live price board snapshots |
-| `intraday_trades` | Individual trade ticks |
+| `off` | Do not run validation |
+| `warn` | Run validation, attach report, emit warnings, return data |
+| `strict` | Run validation and raise on errors |
 
-Types `reference` and `fundamental` are planned but not yet implemented.
-
----
-
-## Limitations
-
-- Validation is provider-agnostic. It cannot detect provider-specific encoding bugs (e.g. price already divided by 1000 by one provider but not another).
-- The freshness check depends on either `df.attrs["fetched_at"]` or the latest row timestamp. Providers that do not populate this field will trigger `FRESHNESS_FETCHED_AT_MISSING`. `fetched_at` is normalised via `_coerce_datetime()` and accepts `datetime`, `pd.Timestamp`, and ISO 8601 strings.
-- Missing trading session detection (`TIME_MISSING_SESSIONS`) requires the caller to supply `expected_dates`. The default CI does not supply a trading calendar.
-- Session time validation (`TRADE_TIME_OUTSIDE_SESSION`, `check_session_time`) is disabled by default because pre-open and post-close data is legitimate in some use cases. When enabled, tz-aware timestamps are converted to `Asia/Ho_Chi_Minh`; tz-naive timestamps are treated as local Vietnam time.
-- The data quality layer does not repair or modify data values.
-- When validation fails due to an internal Python error (e.g. a bug in a rule), a `RuntimeWarning` with code `QUALITY_VALIDATION_INTERNAL_ERROR` is emitted in `warn`/`strict` mode. Data is returned unmodified in all cases. Use `quality_mode="off"` to suppress this warning.
-- `row_index` in `QualityIssue` is always the 0-based positional row offset regardless of the DataFrame's actual index type (integer, DatetimeIndex, string, etc.).
+Per-call kwargs override global environment config.
 
 ---
 
-## Migration Note for Downstream Scanner Users
+## Environment Variables
 
-If you previously implemented custom `DataFrame` validation in a scanner or backtesting pipeline, you can replace that logic with `validate_dataframe`:
+| Variable | Default | Meaning |
+|---|---:|---|
+| `VNSTOCK_QUALITY_ENABLED` | `false` | Enable validation by default |
+| `VNSTOCK_QUALITY_MODE` | `warn` | `off`, `warn`, or `strict` |
+| `VNSTOCK_QUALITY_ATTACH_REPORT` | `true` | Attach `ValidationReport` to `df.attrs["quality"]` |
+| `VNSTOCK_QUALITY_STALE_PRICE_BOARD_SECONDS` | `30` | Freshness threshold for price board snapshots |
+| `VNSTOCK_QUALITY_STALE_INTRADAY_SECONDS` | `60` | Freshness threshold for intraday data |
+| `VNSTOCK_QUALITY_STALE_DAILY_OHLCV_HOURS` | `36` | Freshness threshold for daily OHLCV |
+| `VNSTOCK_QUALITY_CHECK_MISSING_SESSIONS` | `true` | Enable expected-session checks where inputs are provided |
+| `VNSTOCK_QUALITY_CHECK_SESSION_TIME` | `false` | Enable intraday session-time checks |
 
-```python
-# Before
-def check_my_ohlcv(df):
-    if "close" not in df.columns:
-        raise ValueError("missing close")
-    if (df["high"] < df["low"]).any():
-        raise ValueError("OHLC inconsistency")
+---
 
-# After
-from vnstock.core.quality import validate_dataframe
+## Report Model
 
-report = validate_dataframe(df, dataset_type="ohlcv", provider="DNSE", symbol=ticker)
-if not report.valid:
-    for err in report.errors:
-        print(f"[{err.code}] {err.message}")
+Validators return a `ValidationReport` with issue buckets:
+
+```text
+valid
+errors
+warnings
+infos
+row_count
+latest_time
+freshness_status
+provider
+symbol
+interval
 ```
 
-The `validate_dataframe` function returns a `ValidationReport`; it does not raise by default. Pass the report to your own error handling logic, or use `quality_mode="strict"` to let vnstock raise `DataQualityError` automatically.
+Returned DataFrames can carry the report:
+
+```python
+report = df.attrs.get("quality")
+
+if report and not report.valid:
+    for issue in report.errors:
+        print(issue.code, issue.message)
+```
+
+`QualityIssue.row_index` is a 0-based positional row offset. If the original DataFrame index is meaningful, validators may also attach the original label in `issue.context["index_label"]`.
+
+---
+
+## OHLCV Validation
+
+Dataset type:
+
+```text
+ohlcv
+```
+
+Expected core columns:
+
+```text
+time, open, high, low, close, volume
+```
+
+Main checks:
+
+- required columns
+- empty DataFrame
+- timestamp parseability
+- duplicate timestamps
+- monotonic time order
+- future timestamps
+- negative prices or volume
+- null/NaN/inf values
+- OHLC consistency:
+  - `high >= low`
+  - `high >= open`
+  - `high >= close`
+  - `low <= open`
+  - `low <= close`
+- price-scale suspiciousness
+- daily freshness threshold
+
+---
+
+## Price Board Validation
+
+Dataset type:
+
+```text
+price_board
+```
+
+Required columns:
+
+```text
+symbol, reference_price, close_price, volume_accumulated
+```
+
+Recognized optional fields include:
+
+```text
+ceiling_price
+floor_price
+open_price
+high_price
+low_price
+bid_price_1
+ask_price_1
+bid_vol_1
+ask_vol_1
+foreign_buy_volume
+foreign_sell_volume
+```
+
+Main checks:
+
+- required columns
+- empty DataFrame
+- duplicate symbols
+- floor/reference/ceiling consistency
+- close price within price band
+- crossed bid/ask
+- non-negative volume fields
+- price-board freshness
+
+Foreign investor snapshot fields are validated as non-negative volume fields when present. These are not yet a historical foreign-flow time-series dataset.
+
+---
+
+## Intraday Trade Validation
+
+Dataset type:
+
+```text
+intraday_trades
+```
+
+Expected core columns:
+
+```text
+time, price, volume, match_type, id
+```
+
+Main checks:
+
+- required columns
+- duplicate trade ids
+- invalid match type
+- non-positive price
+- negative volume
+- optional session-time validation
+
+Timezone-aware timestamps are converted to Vietnam local time before session-time checks. Timezone-naive timestamps are treated as already local.
+
+---
+
+## Internal Validation Failures
+
+Unexpected validator errors must not silently disappear.
+
+Behavior:
+
+| Mode | Internal validation exception |
+|---|---|
+| `off` | No validation is run |
+| `warn` | Attach synthetic report and emit warning |
+| `strict` | Raise an exception |
+
+Synthetic issue code:
+
+```text
+QUALITY_VALIDATION_INTERNAL_ERROR
+```
+
+This is a signal that the validator itself failed, not necessarily that the market data is invalid.
+
+---
+
+## Current Limitations
+
+- Validators do not repair data.
+- Trading calendar support is not yet first-class; missing-session checks depend on caller-supplied expected dates.
+- Reference and fundamental datasets do not yet have first-class validators.
+- Foreign investor data exists mainly as price board snapshot fields, not historical daily time-series.
+- Intraday session-time checks are disabled by default because pre-open, ATC, and post-close data can be legitimate depending on use case.
+
+---
+
+## Recommended Usage in Data Collection
+
+For ingestion pipelines, prefer:
+
+```python
+df = market.equity.ohlcv(..., validate=True, quality_mode="warn")
+report = df.attrs.get("quality")
+
+# Persist data and report together.
+```
+
+For strict controlled jobs, use:
+
+```python
+df = market.equity.ohlcv(..., validate=True, quality_mode="strict")
+```
+
+For live snapshots where stale data is unacceptable, either disable cache or set a short TTL and keep validation enabled.
+
+---
+
+## Next Work
+
+Planned extensions:
+
+- reference data quality contracts
+- fundamental statement quality contracts
+- dedicated `foreign_flow` dataset quality contract
+- storage of quality reports alongside ingested data
+- data-quality dashboards for ingestion runs

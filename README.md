@@ -1,88 +1,52 @@
-# Vnstock - Công Cụ Python Mã Nguồn Mở Cho Thị Trường Chứng Khoán Việt Nam
+# vnstock — Data-Only Market Data Toolkit
 
-[![Vnstock Homepage](https://raw.githubusercontent.com/thinh-vu/vnstock/refs/heads/main/assets/images/vnstock-home-vi.png)](https://vnstocks.com/)
+`vnstock` is a Python library for extracting and normalizing financial market data, with a strong focus on Vietnamese securities data.
 
-<div id="badges" align="center">
-    <img src="https://img.shields.io/pypi/pyversions/vnstock?logoColor=brown&style=flat" alt="Version"/>
-    <img src="https://img.shields.io/github/last-commit/thinh-vu/vnstock?style=flat" alt="Commit Badge"/>
-    <img src="https://img.shields.io/badge/license-Custom%20License-red?style=flat" alt="Custom License Badge"/>
-</div>
+This fork is maintained as a **data-only market data layer**. It intentionally excludes charting, bot notification, broker login, portfolio management, order placement, and trading execution.
 
-<div id="badges" align="center">
-    <a href="https://pypi.org/project/vnstock/">
-        <img src="https://img.shields.io/pypi/dm/vnstock?label=vnstock%20download&style=flat" alt="vnstock download badge"/>
-    </a>
-</div>
+> Vietnamese summary: fork này tập trung vào **thu thập dữ liệu, chuẩn hóa schema, kiểm tra chất lượng dữ liệu, và so sánh/fallback giữa providers**. Không dùng cho đặt lệnh, quản lý tài khoản, hay tự động giao dịch.
 
 ---
 
-> ⚠️ **Note**: This document begins in 🇻🇳 Vietnamese for our local community.
->
-> 🌐 **English version available below** — scroll or use the TOC (top-right 🟰) to navigate.
+## Current Scope
+
+| Area | Status |
+|---|---|
+| Unified UI | Available through `Market`, `Reference`, `Fundamental`, `Retail` |
+| Vietnam equity OHLCV | KBS default, with VCI/DNSE alternatives for core equity market paths |
+| Price board / quote | KBS default, VCI/DNSE alternatives for core equity market paths |
+| Intraday trades | KBS default, VCI/DNSE alternatives where supported |
+| Index / ETF / futures / warrant / bond market paths | Primarily KBS-backed |
+| Global OHLCV | MSN/FMP where available |
+| Fund data | FMarket-backed fund NAV/holding data |
+| Cache layer | Memory/SQLite cache with env config |
+| Data quality layer | OHLCV, price board, intraday validators |
+| Provider hardening | Capability registry, schema drift detection, comparison, health scoring, contract fixtures/tests |
+| Live smoke tests | Available but disabled by default and gated by env vars |
+| Broker execution | Explicitly out of scope |
 
 ---
 
-## 1.2 triệu lượt tải về toàn thời gian. Một thư viện Python. Công cụ trích xuất dữ liệu phân tích thị trường chứng khoán trong tầm tay của bạn.
-
-> Chào mừng bạn đến với **Vnstock**, thư viện cung cấp công cụ tự động hoá trích xuất dữ liệu (**api chứng khoán việt nam**) mã nguồn mở. Vnstock giúp bạn truy xuất thông tin phân tích đầu tư một cách dễ dàng, nhanh chóng thông qua các hàm Python đơn giản.
-
-Với Vnstock, việc tải dữ liệu chứng khoán việt nam trở nên dễ dàng hơn bao giờ hết. Dù bạn muốn kết nối **vnstock python** để xây dựng mô hình định lượng, tích hợp pipeline dữ liệu hay đơn giản là tìm hiểu về **lịch sử giá cổ phiếu**, dữ liệu đều sẵn sàng cho AI ngay hôm nay.
-
-## Trạng thái fork data-only
-
-Repository này duy trì `vnstock` như một fork thuần trích xuất dữ liệu. Package không còn tích hợp biểu đồ, bot thông báo, giao dịch qua broker, hoặc helper tài liệu runtime; các phần đó nên được triển khai trực tiếp trong ứng dụng của bạn khi cần.
-
-- API đã loại bỏ: [docs/REMOVED_APIS.md](docs/REMOVED_APIS.md)
-- Ma trận tương thích với upstream: [docs/COMPATIBILITY_MATRIX.md](docs/COMPATIBILITY_MATRIX.md)
-- Môi trường dev/test/build có lockfile tại [`requirements.lock`](requirements.lock)
-
-### Tại sao chọn Vnstock?
-
-- **Miễn phí & mã nguồn mở**: Dễ dàng tiếp cận, phục vụ nhà đầu tư cá nhân và lập trình viên muốn truy xuất dữ liệu chứng khoán Việt Nam.
-- **Giải quyết dữ liệu phân mảnh**: Không cần tự viết code "cào" dữ liệu từ số 0. Bạn chỉ cần gọi hàm, Vnstock sẽ truy xuất dữ liệu và trả về dạng DataFrame chuẩn chỉnh để tích hợp vào pipeline phân tích hoặc lưu trữ.
-- **Tương thích AI Agent mạnh mẽ**: Được thiết kế để "Vibe Coding" cùng AI.
-- **Mô hình mở, không ràng buộc tài khoản**: Không đăng ký user, không tier, không khoá tính năng — tích hợp thẳng vào hệ thống của bạn.
-
----
-
-## Bắt đầu nhanh & Vibe Coding
-
-Bạn không cần kiến thức sâu về code để sử dụng vnstock! Chúng tôi cung cấp các hướng dẫn thân thiện nhất:
-
-### 1. Trải nghiệm trực tiếp trên trình duyệt với Google Colab
-
-Nếu bạn chỉ muốn thử nghiệm nhanh hoặc **chạy python online**, bạn có thể dùng Google Colab. Không cần thiết lập môi trường phức tạp!
-
-[![Google Colab](https://img.shields.io/badge/Google_Colab-Xem_hướng_dẫn-F9AB00?style=for-the-badge&logo=googlecolab&logoColor=white)](https://vnstocks.com/onboard/trai-nghiem-vnstock?utm_source=github&utm_medium=readme)
-
-### 2. Vibe Coding với AI (Bạn Ra Lệnh, AI Làm)
-
-Đây là cách tốt nhất cho người mới bắt đầu hoặc chuyên gia muốn xóa bỏ rào cản kỹ thuật và tăng tốc x10. AI sẽ tự động viết code chính xác, chạy chương trình và phân tích kết quả.
-
-Để bắt đầu nhanh nhất, vui lòng tham khảo các hướng dẫn chi tiết sau:
-
-- [![Vibe Coding Guide](https://img.shields.io/badge/Vibe_Coding-Xem_hướng_dẫn_nhanh-8B5CF6?style=for-the-badge&logo=visualstudiocode&logoColor=white)](https://vnstocks.com/onboard/vibe-coding)
-- [![Agent Guide](https://img.shields.io/badge/Agent_Guide-Tài_liệu_chi_tiết-24292e?style=for-the-badge&logo=gitbook&logoColor=white)](https://vnstocks.com/onboard/agent-guide)
-
----
-
-## Cài đặt thư viện
-
-Nếu bạn viết code thủ công, hãy cài đặt qua `pip`:
+## Install
 
 ```bash
 pip install -U vnstock
 ```
 
-### Mô hình truy cập mở
+For development:
 
-`vnstock` là thư viện trích xuất dữ liệu thuần tuý — không quản lý đăng ký người dùng, không phân tầng truy cập, không hạn mức theo tài khoản ở cấp thư viện. Tích hợp trực tiếp vào hệ thống của bạn mà không cần lo quản lý user. Kết nối dữ liệu bên thứ ba như FMP vẫn nhận thông tin xác thực trực tiếp tại connector tương ứng khi chính dịch vụ đó yêu cầu.
+```bash
+git clone https://github.com/duvu/vnstock.git
+cd vnstock
+python -m pip install -r requirements.lock
+python -m pip install -e . --no-deps
+```
+
+Python support follows `pyproject.toml`: Python `>=3.10`.
 
 ---
 
-## Giao diện Hợp nhất (Unified UI) - Vnstock v4+
-
-Đây là bước đột phá của Vnstock! Bạn không cần bận tâm hàm nào thuộc nguồn nào, chỉ cần tập trung vào nhóm dữ liệu.
+## Quick Start
 
 ```python
 from vnstock import Market, Reference, Fundamental
@@ -91,234 +55,191 @@ market = Market()
 ref = Reference()
 fa = Fundamental()
 
-# Lấy dữ liệu lịch sử giá cổ phiếu (OHLCV)
-df_history = market.equity.ohlcv(symbol='VNM', start='2024-01-01', end='2024-05-01')
+# Historical OHLCV, default source is KBS for Vietnamese equities
+bars = market.equity.ohlcv(
+    symbol="FPT",
+    start="2024-01-01",
+    end="2024-06-30",
+    interval="1D",
+)
 
-# Lấy thông tin hồ sơ doanh nghiệp tổng quan
-df_profile = ref.company.info(symbol='FPT')
+# Use an alternative provider where the UI registry supports it
+bars_dnse = market.equity.ohlcv(
+    symbol="FPT",
+    start="2024-01-01",
+    end="2024-06-30",
+    interval="1D",
+    source="DNSE",
+)
 
-# Lấy báo cáo tài chính (Bảng cân đối kế toán) theo năm
-df_balance = fa.equity.balance_sheet(symbol='TCB', period='year')
+# Price board snapshot
+quote = market.equity.quote(symbols_list=["FPT", "VCB", "TCB"])
+
+# Company reference data
+profile = ref.company.info(symbol="FPT")
+
+# Financial statements
+balance_sheet = fa.equity.balance_sheet(symbol="TCB", period="year")
 ```
 
 ---
 
-## Hệ sinh thái truy xuất dữ liệu toàn diện
+## Data Quality Validation
 
-Vnstock tập trung hoàn toàn vào trích xuất dữ liệu tài chính. Các hàm được chia thành 6 mảng chính:
+Quality validation is available for market datasets, but it is **off by default** unless explicitly enabled.
 
-1. **Dữ liệu Cổ phiếu (Equity):** Giá cổ phiếu thời gian thực, **lịch sử giá cổ phiếu**, báo cáo tài chính, hồ sơ doanh nghiệp.
-2. **Chỉ số thị trường (Index):** Biến động **lịch sử giá VNINDEX**, HNX, UPCOM và các chỉ số ngành.
-3. **Chứng quyền (Warrant):** Thông tin chứng quyền, giá thực tế, ngày đáo hạn, trạng thái giao dịch.
-4. **Phái sinh (Futures):** Hợp đồng tương lai phái sinh VN30 và các kỳ hạn tương ứng.
-5. **Quỹ đầu tư (Fund & ETF):** Thông tin danh mục, hiệu suất quỹ mở (FMarket) và các quỹ hoán đổi danh mục.
-6. **Vĩ mô & Hàng hóa (Macro & Commodities):** Tỷ giá ngoại tệ (Forex), Giá vàng (SJC), Tiền điện tử (Crypto).
-
-> **Lưu ý:** Biểu đồ, thông báo (Slack/Telegram/...) và giao dịch qua broker không còn được tích hợp trong package này. Bạn có thể sử dụng các thư viện phù hợp trực tiếp trong ứng dụng của mình.
-
----
-
-## Cấu trúc API (API Structure Tree)
-
-Cấu trúc các API dữ liệu được tổ chức theo 4 miền chính:
-
-```text
-API STRUCTURE TREE - VNSTOCK (Unified UI)
-vnstock
-├── Reference
-│   ├── company # Access company-specific reference data.
-│   │   ├── info() [KBS] -> DataFrame # Get company overview.
-│   │   ├── shareholders() [KBS] -> DataFrame # List major shareholders.
-│   │   ├── officers() [KBS] -> DataFrame # List company leadership.
-│   │   ├── subsidiaries() [KBS] -> DataFrame # List subsidiaries.
-│   │   ├── ownership() [KBS] -> DataFrame # Company ownership structure.
-│   │   ├── insider_trading() [KBS] -> DataFrame # Insider trading history.
-│   │   ├── capital_history() [KBS] -> DataFrame # Capital change history.
-│   │   ├── news() [KBS] -> DataFrame # Company related news.
-│   │   └── events() [KBS] -> DataFrame # Upcoming corporate events.
-│   ├── equity # Equity symbols and grouping reference.
-│   │   ├── list() [KBS] -> DataFrame # List all equity symbols.
-│   │   ├── list_by_group() [KBS] -> DataFrame # List equities by group.
-│   │   ├── list_by_industry() [VCI] -> DataFrame # List equities by industry.
-│   │   └── list_by_exchange() [KBS] -> DataFrame # List symbols by exchange/board.
-│   ├── index # Market index reference data.
-│   │   ├── list() [KBS] -> DataFrame # List all market indices.
-│   │   ├── members() [KBS] -> DataFrame # List constituents of an index.
-│   │   ├── groups() [KBS] -> DataFrame # List supported index groups.
-│   │   └── info() [KBS] -> DataFrame # Get all market indices metadata.
-│   ├── etf # ETF reference data.
-│   │   └── list() [KBS] -> DataFrame # List all trackers/ETFs.
-│   ├── futures # Access index futures reference data.
-│   │   ├── list() [KBS] -> DataFrame # List all futures instruments.
-│   │   └── info() [KBS] -> Dict # Get futures specifications.
-│   ├── warrant # Access covered warrant reference data.
-│   │   ├── list() [KBS] -> DataFrame # List all covered warrants.
-│   │   └── info() [KBS] -> Dict # Get warrant specifications.
-│   ├── bond # Bond/Debt reference data.
-│   │   └── list() # List all debt/bonds.
-│   ├── fund # Mutual fund reference data.
-│   │   ├── list() [FMarket] -> DataFrame # List all mutual funds.
-│   │   ├── top_holding() [FMarket] -> DataFrame # Fund top holdings.
-│   │   ├── industry_holding() [FMarket] -> DataFrame # Fund industry allocation.
-│   │   ├── nav_report() [FMarket] -> DataFrame # Fund NAV performance.
-│   │   └── asset_holding() [FMarket] -> DataFrame # Fund asset allocation.
-│   ├── industry # Industry classification reference.
-│   │   ├── list() [VCI] -> DataFrame # ICB industry classification.
-│   │   └── sectors() [KBS] -> DataFrame # List symbols grouped by industry.
-│   ├── market # Market status and metadata.
-│   │   └── status() [KBS] -> Dict # Get live market status.
-│   └── search # Search functionality.
-│   │   ├── symbol() [MSN] -> DataFrame # Search for symbols globally.
-│   │   └── info() [MSN] -> DataFrame # Search for detailed asset information.
-├── Market
-│   ├── quote() [KBS] -> DataFrame # Global real-time quote.
-│   ├── equity # Access equity market data.
-│   │   ├── ohlcv() [KBS] -> DataFrame # Historical OHLCV bars.
-│   │   ├── quote() [KBS] -> DataFrame # Real-time pricing board data.
-│   │   └── trades() [KBS] -> DataFrame # Tick-by-tick trade tape.
-│   ├── index # Access index market data.
-│   │   └── ohlcv() [KBS] -> DataFrame # Historical OHLCV bars for indices.
-│   ├── etf # Access ETF market data.
-│   │   ├── ohlcv() [KBS] -> DataFrame # Historical OHLCV bars for ETFs.
-│   │   ├── quote() [KBS] -> DataFrame # Real-time pricing for ETFs.
-│   │   └── trades() [KBS] -> DataFrame # Tick-by-tick trades for ETFs.
-│   ├── futures # Access futures market data.
-│   │   ├── ohlcv() [KBS] -> DataFrame # Historical OHLCV bars for Futures.
-│   │   ├── quote() [KBS] -> DataFrame # Real-time pricing for Futures.
-│   │   └── trades() [KBS] -> DataFrame # Tick-by-tick trades for Futures.
-│   ├── warrant # Access warrant market data.
-│   │   ├── ohlcv() [KBS] -> DataFrame # Historical OHLCV bars for Warrants.
-│   │   ├── quote() [KBS] -> DataFrame # Real-time pricing for Warrants.
-│   │   └── trades() [KBS] -> DataFrame # Tick-by-tick trades for Warrants.
-│   ├── forex # Access forex market data.
-│   │   └── ohlcv() [MSN] -> DataFrame # Historical OHLCV bars for forex.
-│   ├── fund # Access Mutual Fund market data.
-│   │   ├── history() [FMarket] -> DataFrame # Fund NAV history.
-│   │   ├── nav() [FMarket] -> DataFrame # Fund NAV history.
-│   │   ├── top_holding() [FMarket] -> DataFrame # Top holdings of the fund.
-│   │   ├── industry_holding() [FMarket] -> DataFrame # Industry allocation of the fund.
-│   │   └── asset_holding() [FMarket] -> DataFrame # Asset class allocation of the fund.
-│   ├── commodity # Access commodity market data.
-│   │   └── ohlcv() [MSN] -> DataFrame # Historical OHLCV for commodities.
-│   └── crypto # Access crypto market data.
-│   │   └── ohlcv() [MSN] -> DataFrame # Historical OHLCV for crypto.
-├── Fundamental
-│   └── equity # Access equity fundamental data.
-│   │   ├── balance_sheet() [KBS] -> DataFrame # Get balance sheet.
-│   │   ├── cash_flow() [KBS] -> DataFrame # Get cash flow.
-│   │   ├── income_statement() [KBS] -> DataFrame # Get income statement.
-│   │   └── ratios() [KBS] -> DataFrame # Financial ratios.
-├── Retail
-│   ├── gold() # Access gold price data.
-│   └── exchange_rate() # Access exchange rate data.
-```
-
----
-
-## Hướng dẫn sử dụng chuyên sâu
-
-Cách gọi hàm truyền thống riêng lẻ theo từng nguồn dữ liệu hiện không còn được khuyến nghị. Để sử dụng tài liệu hướng dẫn chuyên sâu cho AI Agent hoặc tự tuỳ biến chức năng, vui lòng tham khảo [Vnstock Agent Guide](https://github.com/vnstock-hq/vnstock-agent-guide/tree/main/docs/vnstock).
-
----
-
-## Tuyên bố miễn trừ trách nhiệm
-
-Dự án **Vnstock** là một công cụ mã nguồn mở giúp tự động hoá việc trích xuất dữ liệu từ các nguồn công khai, phục vụ **mục đích nghiên cứu và sử dụng cá nhân**. Vnstock **không phải là nhà cung cấp, không sở hữu hay kinh doanh dữ liệu**. Dữ liệu được trích xuất qua công cụ có thể không đầy đủ, không liên tục hoặc sai lệch so với nguồn gốc, do đó không khuyến nghị **sử dụng cho mục đích giao dịch thực tế, thuật toán đầu tư, hoặc ra quyết định tài chính** khi bạn không hiểu rõ.
-
-Các tác giả **không chịu trách nhiệm đối với bất kỳ tổn thất hay thiệt hại nào**. Vnstock không cung cấp tư vấn đầu tư hay tín hiệu giao dịch.
-
----
-
-## Giấy phép sử dụng (License)
-
-`Vnstock` được phát hành theo giấy phép tuỳ chỉnh hướng đến cá nhân, không dành cho mục đích thương mại. Xem [giấy phép](https://vnstocks.com/onboard/giay-phep-su-dung). Nếu bạn cần dùng cho dự án phát sinh doanh thu, vui lòng liên hệ tác giả để được cấp phép chính thức.
-
----
-
-## Bạn đồng hành & Cộng đồng
-
-Vnstock phát triển nhờ sự chung tay của cộng đồng những người yêu công nghệ và tài chính. Mỗi đóng góp code, đánh dấu yêu thích hoặc phản hồi chất lượng đều giúp dự án tốt hơn.
-
-<a href="https://github.com/thinh-vu/vnstock/graphs/contributors">
-   <img src="https://contributors-img.web.app/image?repo=thinh-vu/vnstock" width="800"/>
-</a>
-
----
-
-# Vnstock - The Open-Source Financial Data Toolkit for Investors
-
-[![Vnstock Homepage](https://raw.githubusercontent.com/thinh-vu/vnstock/refs/heads/main/assets/images/vnstock-home-en.png)](https://vnstocks.com/)
-
-<div id="badges" align="center">
-    <img src="https://img.shields.io/pypi/pyversions/vnstock?logoColor=brown&style=flat" alt="Version"/>
-    <img src="https://img.shields.io/github/last-commit/thinh-vu/vnstock?style=flat" alt="Commit Badge"/>
-    <img src="https://img.shields.io/badge/license-Custom%20License-red?style=flat" alt="Custom License Badge"/>
-</div>
-
-## Introduction to Vnstock
-
-Welcome to **Vnstock**, an open-source financial data extraction toolkit for Vietnam market workflows.
-
-Driven by the mission **"To make financial data extraction and investment tools accessible to everyone"**, Vnstock continuously evolves by integrating modern technologies—empowering you to build flexible, intelligent financial analysis solutions effortlessly.
-
-## Data-Only Fork Status
-
-This repository maintains `vnstock` as a data-only fork. The package no longer bundles charting, bot notifications, broker execution, or runtime documentation helper APIs; keep those concerns in your application layer when needed.
-
-- Removed APIs: [docs/REMOVED_APIS.md](docs/REMOVED_APIS.md)
-- Compatibility matrix vs upstream: [docs/COMPATIBILITY_MATRIX.md](docs/COMPATIBILITY_MATRIX.md)
-- Reproducible dev/test/build pins: [`requirements.lock`](requirements.lock)
-
-### Why Vnstock?
-
-- **Free & Open-Source Toolkit**: An accessible data extraction tool for investors, analysts, researchers, and educators.
-- **Full-Stack Python Support**: Easy-to-use functions for building analysis tools or automated data pipelines.
-- **Comprehensive Data Extraction**: Seamlessly automate the extraction of public data for stocks, warrants, indices, futures, bonds, forex, crypto, and more. (Note: Vnstock is an extraction tool, not a data provider).
-- **Flat Open Model**: No user registration, no tiers, no account-based feature gates — integrate directly into your system.
-
-### Join the Community
-
-<div id="badges" align="center">
-  <a href="https://www.facebook.com/groups/vnstock.official" target="_blank">
-    <img src="https://img.shields.io/badge/Join%20the%20Community-Vnstock-blue?style=for-the-badge&logo=facebook" alt="Join Vnstock Community"/>
-  </a>
-</div>
-
-## Installation
-
-```bash
-pip install -U vnstock
-```
-
-## Open Access Model
-
-`vnstock` is a pure data extraction library — no package-level user registration, no access tiers, no account-based quotas. Integrate directly into your system without managing vnstock user state. Third-party data provider integrations such as FMP still accept their own credentials directly through the relevant connector when required by that external service.
-
-> **Note:** Charting, bot notifications (Slack/Telegram/etc.), and broker execution are not included in this package. Use appropriate libraries directly in your application for those needs.
-
-## Quick Start: Unified UI (Vnstock v4+)
-
-Vnstock v4+ introduces the **Unified UI**, allowing you to fetch data without worrying about which source it comes from.
+Per-call usage:
 
 ```python
-from vnstock import Market, Reference, Fundamental
+bars = market.equity.ohlcv(
+    symbol="FPT",
+    start="2024-01-01",
+    end="2024-06-30",
+    validate=True,
+    quality_mode="warn",  # "off" | "warn" | "strict"
+)
 
-# Initialize data domains
-market = Market()
-ref = Reference()
-fa = Fundamental()
-
-# 1. Fetch historical stock prices (OHLCV)
-df_history = market.equity.ohlcv(symbol='VNM', start='2024-01-01', end='2024-05-01')
-
-# 2. Fetch general company profile
-df_profile = ref.company.info(symbol='FPT')
-
-# 3. Fetch financial data
-df_balance = fa.equity.balance_sheet(symbol='TCB', period='year')
+report = bars.attrs.get("quality")
 ```
 
-For more documentation and Vibe Coding guides, please refer to:
+Global env config:
 
-- [![Vibe Coding Guide](https://img.shields.io/badge/Vibe_Coding-Quick_Start_Guide-8B5CF6?style=for-the-badge&logo=visualstudiocode&logoColor=white)](https://vnstocks.com/onboard/vibe-coding)
-- [![Agent Guide](https://img.shields.io/badge/Agent_Guide-Full_Documentation-24292e?style=for-the-badge&logo=gitbook&logoColor=white)](https://vnstocks.com/onboard/agent-guide)
+```bash
+export VNSTOCK_QUALITY_ENABLED=true
+export VNSTOCK_QUALITY_MODE=warn
+export VNSTOCK_QUALITY_ATTACH_REPORT=true
+```
+
+Current validators:
+
+| Dataset | Validator status |
+|---|---|
+| `ohlcv` | Schema, temporal, numeric, OHLC consistency, freshness checks |
+| `price_board` | Required columns, duplicate symbols, price-band consistency, bid/ask checks, non-negative volumes, freshness checks |
+| `intraday_trades` | Required columns, trade price/volume, duplicate id, match type, optional session-time checks |
+| `reference` / `fundamental` | Planned, not yet implemented as first-class quality contracts |
+
+See: [`docs/DATA_QUALITY.md`](docs/DATA_QUALITY.md).
+
+---
+
+## Provider Hardening
+
+The provider hardening layer is under `vnstock/core/provider/`.
+
+It provides:
+
+- provider capability declarations
+- schema drift detection
+- OHLCV cross-provider comparison
+- provider health scoring
+- provider capability matrix generation
+- offline provider contract tests using fixtures
+- live smoke test scaffold gated by environment variables
+
+See: [`docs/PROVIDER_HARDENING.md`](docs/PROVIDER_HARDENING.md).
+
+---
+
+## Foreign Investor Data
+
+The current system exposes foreign investor fields mainly through price board snapshots:
+
+- `foreign_buy_volume`
+- `foreign_sell_volume`
+- `foreign_room`
+
+This is enough for session/snapshot inspection, but not yet a full daily time-series foreign-flow dataset. Historical foreign flow remains a roadmap item.
+
+---
+
+## Cache Configuration
+
+The cache layer supports memory and SQLite backends.
+
+```bash
+export VNSTOCK_CACHE_ENABLED=true
+export VNSTOCK_CACHE_BACKEND=memory   # memory | sqlite
+export VNSTOCK_CACHE_TTL=300
+export VNSTOCK_CACHE_MAX_SIZE=100
+export VNSTOCK_CACHE_PATH=~/.vnstock/cache.db
+```
+
+Live or near-live data such as price board snapshots and intraday trades should use conservative TTLs or disable cache per call when freshness matters.
+
+---
+
+## Live Smoke Tests
+
+Live tests are disabled by default. To run them manually:
+
+```bash
+VNSTOCK_LIVE_TESTS=true PYTHONPATH=. pytest tests/live/providers -m live -v
+```
+
+Optional filters:
+
+```bash
+VNSTOCK_LIVE_TESTS=true VNSTOCK_LIVE_PROVIDERS=DNSE pytest tests/live/providers -m live
+VNSTOCK_LIVE_TESTS=true VNSTOCK_LIVE_SYMBOLS=FPT pytest tests/live/providers -m live
+```
+
+Live tests are not part of the default CI path.
+
+---
+
+## Development Checks
+
+```bash
+ruff check .
+ruff format --check .
+PYTHONPATH=. pytest -m "not slow" tests/unit/core tests/unit/ui tests/unified_ui tests/contracts
+python -m build --sdist --wheel --no-isolation
+```
+
+Targeted provider/quality checks:
+
+```bash
+PYTHONPATH=. pytest tests/unit/core/quality tests/unit/core/provider tests/contracts/providers -q
+```
+
+---
+
+## Documentation Map
+
+| Document | Purpose |
+|---|---|
+| [`roadmap.md`](roadmap.md) | Current roadmap focused on data collection foundation |
+| [`docs/DATA_QUALITY.md`](docs/DATA_QUALITY.md) | Quality validation behavior, modes, env config, and limitations |
+| [`docs/PROVIDER_HARDENING.md`](docs/PROVIDER_HARDENING.md) | Provider capabilities, drift detection, comparison, health scoring, tests |
+| [`docs/REMOVED_APIS.md`](docs/REMOVED_APIS.md) | APIs removed from the data-only fork |
+| [`docs/COMPATIBILITY_MATRIX.md`](docs/COMPATIBILITY_MATRIX.md) | Compatibility notes versus upstream |
+| [`requirements.lock`](requirements.lock) | Locked dependency set for reproducible dev/test/build |
+
+---
+
+## Non-Goals
+
+This package must not include:
+
+- broker login or session management
+- order placement, order cancel/modify, portfolio, or account APIs
+- trading bots or automated execution
+- investment advice, signals, or recommendations
+- charting or notification integrations in the core package
+
+Keep those concerns in application-level projects, not in the data extraction library.
+
+---
+
+## Disclaimer
+
+`vnstock` is a data extraction and normalization tool. It is not an official data vendor, broker, investment adviser, or trading system. Extracted data can be incomplete, delayed, inconsistent, or wrong. Validate data before using it in research, reporting, or any financial workflow.
+
+Do not treat library output as investment advice.
+
+---
+
+## License
+
+This project uses a custom license oriented toward personal, research, and non-commercial use. See the repository license and upstream license notes before using it in commercial or organizational workflows.
