@@ -6,9 +6,12 @@ Do NOT import this in production code.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
+
+if TYPE_CHECKING:
+    from vnstock.core.auth.spec import AuthSpec
 
 
 class FakeProviderPlugin:
@@ -52,3 +55,8 @@ class FakeProviderPlugin:
 
     def diagnostics(self) -> dict[str, Any]:
         return {"name": self.name, "status": "ok"}
+
+    def auth_spec(self, dataset: str) -> "AuthSpec":
+        from vnstock.core.auth.spec import AuthSpec
+
+        return AuthSpec.no_auth()

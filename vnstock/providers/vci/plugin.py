@@ -4,7 +4,7 @@ VCI provider plugin — ProviderPlugin adapter wrapping vnstock.explorer.vci.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
@@ -17,6 +17,9 @@ from vnstock.providers.vci.normalize import (
     normalize_equity_ohlcv,
     normalize_equity_quote,
 )
+
+if TYPE_CHECKING:
+    from vnstock.core.auth.spec import AuthSpec
 
 _SUPPORTED_DATASETS = frozenset(
     d for d, cap in VCI_CAPABILITIES.items() if cap.get("supported")
@@ -58,6 +61,12 @@ class VCIProviderPlugin:
             "supported_datasets": sorted(_SUPPORTED_DATASETS),
             "limitations": VCI_LIMITATIONS,
         }
+
+    def auth_spec(self, dataset: str) -> "AuthSpec":
+        """VCI is a public provider — no authentication required."""
+        from vnstock.core.auth.spec import AuthSpec
+
+        return AuthSpec.no_auth()
 
     @property
     def _dataset_handlers(self) -> dict[str, Any]:

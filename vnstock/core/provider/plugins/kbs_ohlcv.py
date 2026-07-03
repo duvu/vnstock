@@ -18,7 +18,7 @@ Usage (internal)::
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
@@ -27,6 +27,9 @@ from vnstock.core.provider.exceptions import (
     UnsupportedDatasetForProviderError,
 )
 from vnstock.explorer.kbs.quote import Quote  # noqa: E402
+
+if TYPE_CHECKING:
+    from vnstock.core.auth.spec import AuthSpec
 
 #: Datasets this plugin supports.
 _SUPPORTED_DATASETS = frozenset({"equity.ohlcv", "index.ohlcv"})
@@ -126,6 +129,12 @@ class KBSOHLCVPlugin:
         """
         if not params.get("symbol"):
             raise ValueError(f"'symbol' is required for dataset '{dataset}'.")
+
+    def auth_spec(self, dataset: str) -> "AuthSpec":
+        """Return auth spec — KBS is a public provider, no auth needed."""
+        from vnstock.core.auth.spec import AuthSpec
+
+        return AuthSpec.no_auth()
 
     def diagnostics(self) -> dict[str, Any]:
         """Return KBS plugin diagnostics."""

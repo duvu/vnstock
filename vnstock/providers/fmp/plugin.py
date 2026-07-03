@@ -6,7 +6,7 @@ Requires FMP_API_KEY environment variable.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
@@ -16,6 +16,9 @@ from vnstock.core.provider.exceptions import (
 )
 from vnstock.providers.fmp.capabilities import FMP_CAPABILITIES, FMP_LIMITATIONS
 from vnstock.providers.fmp.normalize import normalize_equity_ohlcv
+
+if TYPE_CHECKING:
+    from vnstock.core.auth.spec import AuthSpec
 
 _SUPPORTED_DATASETS = frozenset(
     d for d, cap in FMP_CAPABILITIES.items() if cap.get("supported")
@@ -54,6 +57,24 @@ class FMPProviderPlugin:
             "supported_datasets": sorted(_SUPPORTED_DATASETS),
             "limitations": FMP_LIMITATIONS,
         }
+
+    def auth_spec(self, dataset: str) -> "AuthSpec":
+        """FMP requires an API key but uses a static env-based credential.
+
+        FMP is not interactive-login based; the API key is configured via
+        environment variable ``FMP_API_KEY``. We declare it as API_KEY type
+        but not experimental.
+        """
+        from vnstock.core.auth.spec import AuthSpec
+        from vnstock.core.auth.types import AuthType
+
+        return AuthSpec(
+            auth_type=AuthType.API_KEY,
+            required=True,
+            experimental=False,
+            explicit_only=False,
+            notes="FMP API key required. Set via FMP_API_KEY env var.",
+        )
 
     @property
     def _dataset_handlers(self) -> dict[str, Any]:

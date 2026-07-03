@@ -65,6 +65,8 @@ dev = [
 
 [project.scripts]
 vnstock-tcbs-login = "vnstock.cli.tcbs_login:main"
+vnstock-auth = "vnstock.cli.auth:main"
+vnstock-serve = "vnstock.cli.serve:main"
 
 [project.urls]
 Documentation = "https://github.com/duvu/vnstock#readme"

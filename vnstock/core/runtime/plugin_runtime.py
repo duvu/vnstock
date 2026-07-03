@@ -225,6 +225,7 @@ class PluginRuntime:
             provider_diagnostics=provider.diagnostics(),
             latency_ms=latency_ms,
             contract_errors=contract_errors,
+            provider_name=provider.name,
         )
 
         result = DataResult(
@@ -285,6 +286,7 @@ class PluginRuntime:
         provider_diagnostics: dict[str, Any],
         latency_ms: float | None,
         contract_errors: list[str],
+        provider_name: str = "",
     ) -> dict[str, Any]:
         """Build the diagnostics dict for DataResult."""
         diag: dict[str, Any] = {}
@@ -310,4 +312,18 @@ class PluginRuntime:
         }
         if safe_provider_diag:
             diag["provider_diagnostics"] = safe_provider_diag
+
+        # Attach safe auth metadata — never includes token/credential material
+        try:
+            from vnstock.core.auth.diagnostics import AuthDiagnostics
+
+            auth_ctx = provider_diagnostics.get("auth_context")
+            if auth_ctx is not None:
+                diag["auth"] = AuthDiagnostics.from_context(auth_ctx).to_dict()
+            else:
+                diag["auth"] = AuthDiagnostics.unauthenticated(provider_name).to_dict()
+        except Exception:
+            # Auth diagnostics are best-effort — never break the data path
+            diag["auth"] = {"auth_used": False, "auth_type": "none"}
+
         return diag

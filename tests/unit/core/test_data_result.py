@@ -129,3 +129,116 @@ class TestNoSecretsInMetadata:
             assert forbidden not in result_dict, (
                 f"Forbidden key '{forbidden}' found in DataResult"
             )
+
+
+class TestAuthDiagnosticsInDataResult:
+    """Tasks 83-87: Safe auth metadata attaches to DataResult.diagnostics."""
+
+    def test_auth_diagnostics_no_credential_material(self, sample_df):
+        """Auth diagnostics must not contain token/password/secret."""
+        from vnstock.core.auth.diagnostics import AuthDiagnostics
+
+        diag = AuthDiagnostics.unauthenticated("KBS").to_dict()
+        result = DataResult(
+            dataset="equity.ohlcv",
+            provider="KBS",
+            data=sample_df,
+            diagnostics={"auth": diag},
+        )
+        df = result.to_dataframe()
+        auth_meta = df.attrs["diagnostics"]["auth"]
+        body_str = str(auth_meta).lower()
+        for dangerous in ["token", "password", "secret", "bearer", "api_key"]:
+            assert dangerous not in body_str
+
+    def test_unauthenticated_auth_diag(self, sample_df):
+        """Unauthenticated diagnostics has correct defaults."""
+        from vnstock.core.auth.diagnostics import AuthDiagnostics
+
+        diag = AuthDiagnostics.unauthenticated("KBS")
+        assert diag.auth_used is False
+        assert diag.auth_type == "none"
+        assert diag.provider == "KBS"
+
+    def test_auth_diag_to_dict_safe(self):
+        """to_dict() produces a plain dict with no credential material."""
+        from vnstock.core.auth.diagnostics import AuthDiagnostics
+
+        d = AuthDiagnostics(
+            provider="TCBS",
+            auth_used=True,
+            auth_type="interactive",
+            credential_label="tcbs:local_file",
+            experimental=True,
+        ).to_dict()
+        assert isinstance(d, dict)
+        assert d["auth_used"] is True
+        assert d["auth_type"] == "interactive"
+        assert d["provider"] == "TCBS"
+        assert "token" not in d
+        assert "password" not in d
+
+    def test_build_diagnostics_attaches_auth(self, sample_df):
+        """_build_diagnostics includes 'auth' key with safe data."""
+        from unittest.mock import MagicMock
+
+        from vnstock.core.runtime.plugin_runtime import PluginRuntime
+
+        runtime = PluginRuntime.__new__(PluginRuntime)
+        runtime._router = MagicMock()
+        runtime.runtime_path = "test"
+        diag = runtime._build_diagnostics(
+            routing_decision=None,
+            provider_diagnostics={},
+            latency_ms=12.5,
+            contract_errors=[],
+            provider_name="KBS",
+        )
+        assert "auth" in diag
+        assert diag["auth"]["auth_used"] is False
+        assert diag["auth"]["auth_type"] == "none"
+
+    def test_build_diagnostics_no_credential_in_provider_diag(self, sample_df):
+        """Credential fields in provider_diagnostics are stripped."""
+        from unittest.mock import MagicMock
+
+        from vnstock.core.runtime.plugin_runtime import PluginRuntime
+
+        runtime = PluginRuntime.__new__(PluginRuntime)
+        runtime._router = MagicMock()
+        runtime.runtime_path = "test"
+        diag = runtime._build_diagnostics(
+            routing_decision=None,
+            provider_diagnostics={
+                "api_key": "SHOULD_BE_STRIPPED",
+                "access_token": "SHOULD_BE_STRIPPED",
+                "safe_field": "ok",
+            },
+            latency_ms=None,
+            contract_errors=[],
+            provider_name="FMP",
+        )
+        provider_diag = diag.get("provider_diagnostics", {})
+        assert "api_key" not in provider_diag
+        assert "access_token" not in provider_diag
+        if "safe_field" in diag.get("provider_diagnostics", {}):
+            assert diag["provider_diagnostics"]["safe_field"] == "ok"
+
+    def test_existing_quality_metadata_preserved(self, sample_df):
+        """Auth diagnostics addition does not remove quality metadata."""
+        from vnstock.core.auth.diagnostics import AuthDiagnostics
+
+        auth_diag = AuthDiagnostics.unauthenticated("VCI").to_dict()
+        result = DataResult(
+            dataset="equity.ohlcv",
+            provider="VCI",
+            data=sample_df,
+            quality_status="PASS",
+            quality_report={"contract_errors": []},
+            diagnostics={"auth": auth_diag, "routing": {"reason": "default"}},
+        )
+        df = result.to_dataframe()
+        assert df.attrs["quality_status"] == "PASS"
+        assert df.attrs["quality"]["contract_errors"] == []
+        assert "auth" in df.attrs["diagnostics"]
+        assert "routing" in df.attrs["diagnostics"]
