@@ -94,15 +94,15 @@ class TestRoutingDiagnostics:
         assert diag is not None
         assert diag["dataset"] == "equity.ohlcv"
         assert diag["selected_provider"] == "KBS"
-        assert "candidate_providers" in diag
-        assert "routing_reason" in diag
+        assert "candidates" in diag
+        assert "reason" in diag
 
     def test_diagnostics_populated_after_auto(self, router):
         """Diagnostics are available after auto routing."""
         router.resolve("equity.ohlcv")
         diag = router.last_diagnostics
         assert diag is not None
-        assert diag["source"] == "auto"
+        assert diag["requested_source"] is None
         assert diag["selected_provider"] == "KBS"
 
     def test_diagnostics_schema(self, router):
@@ -111,9 +111,9 @@ class TestRoutingDiagnostics:
         diag = router.last_diagnostics
         required_keys = {
             "dataset",
-            "source",
+            "requested_source",
             "selected_provider",
-            "candidate_providers",
-            "routing_reason",
+            "candidates",
+            "reason",
         }
         assert required_keys.issubset(diag.keys())

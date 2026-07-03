@@ -2,170 +2,170 @@
 
 ## 0. Prerequisite check
 
-- [ ] Confirm Phase 1 `DatasetContract` exists.
-- [ ] Confirm Phase 1 `ProviderPlugin` exists.
-- [ ] Confirm Phase 1 `ProviderRegistry` exists.
-- [ ] Confirm Phase 1 `ProviderRouter` exists.
-- [ ] Confirm Phase 1 `DataResult` exists.
-- [ ] Confirm Phase 2 provider plugins exist.
-- [ ] Confirm Phase 2 provider capabilities exist.
-- [ ] Confirm Phase 2 provider limitations metadata exists.
+- [x] Confirm Phase 1 `DatasetContract` exists.
+- [x] Confirm Phase 1 `ProviderPlugin` exists.
+- [x] Confirm Phase 1 `ProviderRegistry` exists.
+- [x] Confirm Phase 1 `ProviderRouter` exists.
+- [x] Confirm Phase 1 `DataResult` exists.
+- [x] Confirm Phase 2 provider plugins exist.
+- [x] Confirm Phase 2 provider capabilities exist.
+- [x] Confirm Phase 2 provider limitations metadata exists.
 
 ## 1. Provider health model
 
-- [ ] Create `vnstock/core/provider/health.py`.
-- [ ] Add `ProviderHealth`.
-- [ ] Define health statuses:
+- [x] Create `vnstock/core/provider/health.py`.
+- [x] Add `ProviderHealth`.
+- [x] Define health statuses:
   - `HEALTHY`
   - `DEGRADED`
   - `FAILING`
   - `UNKNOWN`
   - `DISABLED`
-- [ ] Add status semantics docs.
-- [ ] Add unit tests for health model construction.
-- [ ] Add unit tests for health status validation.
+- [x] Add status semantics docs.
+- [x] Add unit tests for health model construction.
+- [x] Add unit tests for health status validation.
 
 ## 2. Provider health store
 
-- [ ] Add `ProviderHealthStore` interface.
-- [ ] Add `InMemoryProviderHealthStore`.
-- [ ] Implement `get(provider, dataset)`.
-- [ ] Implement `set(health)`.
-- [ ] Implement `record_success(...)`.
-- [ ] Implement `record_failure(...)`.
-- [ ] Implement `list_for_dataset(dataset)`.
-- [ ] Add tests for missing health defaulting to `UNKNOWN`.
-- [ ] Add tests for success updates.
-- [ ] Add tests for failure updates.
+- [x] Add `ProviderHealthStore` interface.
+- [x] Add `InMemoryProviderHealthStore`.
+- [x] Implement `get(provider, dataset)`.
+- [x] Implement `set(health)`.
+- [x] Implement `record_success(...)`.
+- [x] Implement `record_failure(...)`.
+- [x] Implement `list_for_dataset(dataset)`.
+- [x] Add tests for missing health defaulting to `UNKNOWN`.
+- [x] Add tests for success updates.
+- [x] Add tests for failure updates.
 
 ## 3. Provider cooldown
 
-- [ ] Add cooldown model.
-- [ ] Add cooldown calculation helper.
-- [ ] Add active cooldown check.
-- [ ] Add cooldown on repeated failures.
-- [ ] Add cooldown diagnostics.
-- [ ] Add tests for short cooldown.
-- [ ] Add tests for repeated failure cooldown.
-- [ ] Add tests for cooldown expiry.
-- [ ] Add tests that active cooldown provider is skipped in auto routing.
+- [x] Add cooldown model.
+- [x] Add cooldown calculation helper.
+- [x] Add active cooldown check.
+- [x] Add cooldown on repeated failures.
+- [x] Add cooldown diagnostics.
+- [x] Add tests for short cooldown.
+- [x] Add tests for repeated failure cooldown.
+- [x] Add tests for cooldown expiry.
+- [x] Add tests that active cooldown provider is skipped in auto routing.
 
 ## 4. Routing policy
 
-- [ ] Add `RoutingPolicy`.
-- [ ] Add default routing policy.
-- [ ] Support `prefer_healthy`.
-- [ ] Support `allow_degraded`.
-- [ ] Support `allow_failing_fallback`.
-- [ ] Support `respect_cooldown`.
-- [ ] Support `use_priority_tiebreaker`.
-- [ ] Add tests for policy behavior.
+- [x] Add `RoutingPolicy`.
+- [x] Add default routing policy.
+- [x] Support `prefer_healthy`.
+- [x] Support `allow_degraded`.
+- [x] Support `allow_failing_fallback`.
+- [x] Support `respect_cooldown`.
+- [x] Support `use_priority_tiebreaker`.
+- [x] Add tests for policy behavior.
 
 ## 5. Routing decision and diagnostics
 
-- [ ] Add `RoutingDecision`.
-- [ ] Add routing diagnostics serializer.
-- [ ] Include dataset.
-- [ ] Include requested source.
-- [ ] Include selected provider.
-- [ ] Include candidate providers.
-- [ ] Include rejected providers.
-- [ ] Include fallback flag.
-- [ ] Include routing reason.
-- [ ] Include health snapshot.
-- [ ] Include warnings.
-- [ ] Add tests for diagnostics completeness.
-- [ ] Add tests that diagnostics do not contain sensitive credential material.
+- [x] Add `RoutingDecision`.
+- [x] Add routing diagnostics serializer.
+- [x] Include dataset.
+- [x] Include requested source.
+- [x] Include selected provider.
+- [x] Include candidate providers.
+- [x] Include rejected providers.
+- [x] Include fallback flag.
+- [x] Include routing reason.
+- [x] Include health snapshot.
+- [x] Include warnings.
+- [x] Add tests for diagnostics completeness.
+- [x] Add tests that diagnostics do not contain sensitive credential material.
 
 ## 6. ProviderRouter health-aware behavior
 
-- [ ] Update `ProviderRouter` to accept health store.
-- [ ] Update `ProviderRouter` to accept routing policy.
-- [ ] Implement auto routing by health.
-- [ ] Implement provider priority tie-breaker.
-- [ ] Implement active cooldown rejection.
-- [ ] Implement degraded fallback behavior.
-- [ ] Ensure failing providers are rejected by default.
-- [ ] Add option to allow failing fallback through policy.
-- [ ] Add explicit source behavior with health warning.
-- [ ] Add tests for healthy provider selection.
-- [ ] Add tests for degraded fallback.
-- [ ] Add tests for failing provider rejection.
-- [ ] Add tests for explicit source degraded warning.
-- [ ] Add tests for unsupported explicit source.
+- [x] Update `ProviderRouter` to accept health store.
+- [x] Update `ProviderRouter` to accept routing policy.
+- [x] Implement auto routing by health.
+- [x] Implement provider priority tie-breaker.
+- [x] Implement active cooldown rejection.
+- [x] Implement degraded fallback behavior.
+- [x] Ensure failing providers are rejected by default.
+- [x] Add option to allow failing fallback through policy.
+- [x] Add explicit source behavior with health warning.
+- [x] Add tests for healthy provider selection.
+- [x] Add tests for degraded fallback.
+- [x] Add tests for failing provider rejection.
+- [x] Add tests for explicit source degraded warning.
+- [x] Add tests for unsupported explicit source.
 
 ## 7. Success/failure recording
 
-- [ ] Wrap provider fetch with success/failure recording.
-- [ ] Record latency where available.
-- [ ] Record freshness score where available.
-- [ ] Record fetch failure.
-- [ ] Record validation failure.
-- [ ] Reset or decay failure count on success.
-- [ ] Add tests for success after failure.
-- [ ] Add tests for validation failure marking provider degraded or failing.
+- [x] Wrap provider fetch with success/failure recording.
+- [x] Record latency where available.
+- [x] Record freshness score where available.
+- [x] Record fetch failure.
+- [x] Record validation failure.
+- [x] Reset or decay failure count on success.
+- [x] Add tests for success after failure.
+- [x] Add tests for validation failure marking provider degraded or failing.
 
 ## 8. DataResult diagnostics integration
 
-- [ ] Attach routing diagnostics to `DataResult.diagnostics`.
-- [ ] Attach provider diagnostics to `DataResult.diagnostics`.
-- [ ] Attach selected provider to `DataResult.provider`.
-- [ ] Preserve existing `DataFrame.attrs`.
-- [ ] Add tests for DataFrame attrs diagnostics.
-- [ ] Add tests for backward compatibility of `df.attrs.get("quality")`.
+- [x] Attach routing diagnostics to `DataResult.diagnostics`.
+- [x] Attach provider diagnostics to `DataResult.diagnostics`.
+- [x] Attach selected provider to `DataResult.provider`.
+- [x] Preserve existing `DataFrame.attrs`.
+- [x] Add tests for DataFrame attrs diagnostics.
+- [x] Add tests for backward compatibility of `df.attrs.get("quality")`.
 
 ## 9. Provider comparison expansion
 
-- [ ] Create or update `vnstock/core/provider/comparison.py`.
-- [ ] Harden `compare_ohlcv`.
-- [ ] Add `compare_quote`.
-- [ ] Add `compare_intraday_shape`.
-- [ ] Add `compare_coverage`.
-- [ ] Add `compare_freshness`.
-- [ ] Add provider-specific tolerance hooks.
-- [ ] Add tests for OHLCV comparison.
-- [ ] Add tests for quote comparison.
-- [ ] Add tests for intraday shape comparison.
-- [ ] Add tests for freshness comparison.
-- [ ] Add tests for missing columns before comparison access.
+- [x] Create or update `vnstock/core/provider/comparison.py`.
+- [x] Harden `compare_ohlcv`.
+- [x] Add `compare_quote`.
+- [x] Add `compare_intraday_shape`.
+- [x] Add `compare_coverage`.
+- [x] Add `compare_freshness`.
+- [x] Add provider-specific tolerance hooks.
+- [x] Add tests for OHLCV comparison.
+- [x] Add tests for quote comparison.
+- [x] Add tests for intraday shape comparison.
+- [x] Add tests for freshness comparison.
+- [x] Add tests for missing columns before comparison access.
 
 ## 10. Error model
 
-- [ ] Add `NoProviderForDatasetError`.
-- [ ] Add `NoHealthyProviderError`.
-- [ ] Add `ProviderInCooldownError`.
-- [ ] Add `ProviderDisabledError`.
-- [ ] Ensure auto routing errors include candidate/rejection context.
-- [ ] Add tests for error messages.
+- [x] Add `NoProviderForDatasetError`.
+- [x] Add `NoHealthyProviderError`.
+- [x] Add `ProviderInCooldownError`.
+- [x] Add `ProviderDisabledError`.
+- [x] Ensure auto routing errors include candidate/rejection context.
+- [x] Add tests for error messages.
 
 ## 11. Configuration
 
-- [ ] Add default provider priority by dataset.
-- [ ] Use priority as tie-breaker.
-- [ ] Add tests for priority ordering.
-- [ ] Document future YAML/env config option.
-- [ ] Avoid introducing auth policies in Phase 3.
+- [x] Add default provider priority by dataset.
+- [x] Use priority as tie-breaker.
+- [x] Add tests for priority ordering.
+- [x] Document future YAML/env config option.
+- [x] Avoid introducing auth policies in Phase 3.
 
 ## 12. Documentation
 
-- [ ] Add `docs/PROVIDER_ROUTING.md`.
-- [ ] Add `docs/PROVIDER_DIAGNOSTICS.md`.
-- [ ] Document health statuses.
-- [ ] Document routing policy.
-- [ ] Document explicit source behavior.
-- [ ] Document auto source behavior.
-- [ ] Document cooldown behavior.
-- [ ] Document comparison APIs.
-- [ ] Document diagnostics examples.
-- [ ] Document data-only boundary.
+- [x] Add `docs/PROVIDER_ROUTING.md`.
+- [x] Add `docs/PROVIDER_DIAGNOSTICS.md`.
+- [x] Document health statuses.
+- [x] Document routing policy.
+- [x] Document explicit source behavior.
+- [x] Document auto source behavior.
+- [x] Document cooldown behavior.
+- [x] Document comparison APIs.
+- [x] Document diagnostics examples.
+- [x] Document data-only boundary.
 
 ## 13. Backward compatibility
 
-- [ ] Confirm `Market().equity.ohlcv(...)` remains compatible.
-- [ ] Confirm explicit `source=` remains compatible.
-- [ ] Confirm `source="auto"` remains compatible.
-- [ ] Confirm `validate=True` quality metadata remains compatible.
-- [ ] Confirm public return type remains `pandas.DataFrame`.
+- [x] Confirm `Market().equity.ohlcv(...)` remains compatible.
+- [x] Confirm explicit `source=` remains compatible.
+- [x] Confirm `source="auto"` remains compatible.
+- [x] Confirm `validate=True` quality metadata remains compatible.
+- [x] Confirm public return type remains `pandas.DataFrame`.
 
 ## 14. Validation
 
@@ -182,17 +182,17 @@ python -m build --sdist --wheel --no-isolation
 
 Phase 3 is complete when:
 
-- [ ] provider health model exists;
-- [ ] provider health store exists;
-- [ ] cooldown behavior exists;
-- [ ] routing policy exists;
-- [ ] routing decision/diagnostics exist;
-- [ ] router selects providers by health;
-- [ ] explicit source behavior is preserved;
-- [ ] diagnostics attach to result metadata;
-- [ ] comparison APIs are expanded;
-- [ ] unit tests pass;
-- [ ] contract tests pass;
-- [ ] public API remains backward-compatible;
-- [ ] data-only boundary remains enforced;
-- [ ] docs are updated.
+- [x] provider health model exists;
+- [x] provider health store exists;
+- [x] cooldown behavior exists;
+- [x] routing policy exists;
+- [x] routing decision/diagnostics exist;
+- [x] router selects providers by health;
+- [x] explicit source behavior is preserved;
+- [x] diagnostics attach to result metadata;
+- [x] comparison APIs are expanded;
+- [x] unit tests pass;
+- [x] contract tests pass;
+- [x] public API remains backward-compatible;
+- [x] data-only boundary remains enforced;
+- [x] docs are updated.

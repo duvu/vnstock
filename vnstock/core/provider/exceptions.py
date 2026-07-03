@@ -11,7 +11,11 @@ Hierarchy::
     ├── ProviderNotFoundError
     ├── UnsupportedDatasetError
     ├── UnsupportedDatasetForProviderError
-    └── ProviderFetchError
+    ├── ProviderFetchError
+    ├── NoProviderForDatasetError
+    ├── NoHealthyProviderError
+    ├── ProviderInCooldownError
+    └── ProviderDisabledError
 """
 
 from __future__ import annotations
@@ -96,4 +100,92 @@ class ProviderFetchError(VnstockPlatformError):
         msg = f"Provider '{provider_name}' failed to fetch dataset '{dataset}'."
         if cause:
             msg += f" Cause: {cause}"
+        super().__init__(msg)
+
+
+class NoProviderForDatasetError(VnstockPlatformError):
+    """Raised when no provider is registered that supports *dataset* at all.
+
+    Unlike :class:`UnsupportedDatasetError` (which signals no provider passed
+    health/policy filters), this error means the dataset has zero registered
+    providers regardless of health.
+
+    Args:
+        dataset: The dataset name with no registered providers.
+    """
+
+    def __init__(self, dataset: str) -> None:
+        self.dataset = dataset
+        super().__init__(f"No provider is registered for dataset '{dataset}'.")
+
+
+class NoHealthyProviderError(VnstockPlatformError):
+    """Raised when providers exist for *dataset* but none pass health checks.
+
+    Args:
+        dataset: The dataset that was requested.
+        candidates: Provider names that were evaluated but rejected.
+        rejection_reasons: Optional mapping of provider name → reason string.
+    """
+
+    def __init__(
+        self,
+        dataset: str,
+        candidates: list[str] | None = None,
+        rejection_reasons: dict[str, str] | None = None,
+    ) -> None:
+        self.dataset = dataset
+        self.candidates = candidates or []
+        self.rejection_reasons = rejection_reasons or {}
+        msg = f"No healthy provider available for dataset '{dataset}'."
+        if self.candidates:
+            msg += f" Evaluated: {', '.join(self.candidates)}."
+        super().__init__(msg)
+
+
+class ProviderInCooldownError(VnstockPlatformError):
+    """Raised when an explicitly requested provider is currently in cooldown.
+
+    Args:
+        provider_name: The provider name in cooldown.
+        dataset: The requested dataset.
+        cooldown_until: ISO-format timestamp when cooldown expires.
+    """
+
+    def __init__(
+        self,
+        provider_name: str,
+        dataset: str,
+        cooldown_until: str | None = None,
+    ) -> None:
+        self.provider_name = provider_name
+        self.dataset = dataset
+        self.cooldown_until = cooldown_until
+        msg = f"Provider '{provider_name}' is in cooldown for dataset '{dataset}'."
+        if cooldown_until:
+            msg += f" Cooldown expires at {cooldown_until}."
+        super().__init__(msg)
+
+
+class ProviderDisabledError(VnstockPlatformError):
+    """Raised when an explicitly requested provider is administratively disabled.
+
+    Args:
+        provider_name: The disabled provider name.
+        dataset: The requested dataset.
+        notes: Optional human-readable reason for disabling.
+    """
+
+    def __init__(
+        self,
+        provider_name: str,
+        dataset: str,
+        notes: str | None = None,
+    ) -> None:
+        self.provider_name = provider_name
+        self.dataset = dataset
+        self.notes = notes
+        msg = f"Provider '{provider_name}' is disabled for dataset '{dataset}'."
+        if notes:
+            msg += f" Notes: {notes}"
         super().__init__(msg)
