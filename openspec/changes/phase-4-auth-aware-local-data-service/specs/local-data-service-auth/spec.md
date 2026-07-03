@@ -16,14 +16,14 @@ The default binding SHOULD be local-only.
 
 #### Scenario: service starts locally
 
-Given the service command is executed with default options  
-When startup succeeds  
+Given the service command is executed with default options
+When startup succeeds
 Then the service SHALL listen on a local interface and expose a health endpoint.
 
 #### Scenario: service remains data-read only
 
-Given the service is running  
-When endpoints are inspected  
+Given the service is running
+When endpoints are inspected
 Then the service SHALL expose data-read endpoints only.
 
 ---
@@ -42,8 +42,8 @@ Docker artifacts SHOULD include:
 
 #### Scenario: Docker service supports interactive command login
 
-Given the Docker service is running  
-When the user executes an interactive auth command inside the container  
+Given the Docker service is running
+When the user executes an interactive auth command inside the container
 Then the command SHALL use the configured credential store and the service SHALL be able to read auth state afterward.
 
 ---
@@ -65,14 +65,14 @@ Login SHALL be local and interactive.
 
 #### Scenario: TCBS command login
 
-Given the user runs `vnstock auth login tcbs`  
-When the provider requires interactive verification  
+Given the user runs `vnstock auth login tcbs`
+When the provider requires interactive verification
 Then the command SHALL complete the local interactive flow and store auth state through `CredentialStore`.
 
 #### Scenario: login does not print credential material
 
-Given provider login succeeds or fails  
-When CLI output is produced  
+Given provider login succeeds or fails
+When CLI output is produced
 Then the CLI SHALL NOT print sensitive credential material.
 
 ---
@@ -83,8 +83,8 @@ The local data service SHALL NOT expose a REST login endpoint.
 
 #### Scenario: login endpoint is absent
 
-Given the service is running  
-When the caller attempts to find or call a provider login endpoint  
+Given the service is running
+When the caller attempts to find or call a provider login endpoint
 Then no such endpoint SHALL be available.
 
 ---
@@ -106,14 +106,14 @@ The auth core SHALL include:
 
 #### Scenario: provider declares auth spec
 
-Given a provider plugin supports authenticated data access  
-When `auth_spec(dataset)` is called  
+Given a provider plugin supports authenticated data access
+When `auth_spec(dataset)` is called
 Then the provider SHALL return its auth requirements for that dataset.
 
 #### Scenario: public provider declares no-auth spec
 
-Given a provider does not require authentication for a dataset  
-When `auth_spec(dataset)` is called  
+Given a provider does not require authentication for a dataset
+When `auth_spec(dataset)` is called
 Then the provider SHALL declare that no auth is required.
 
 ---
@@ -132,14 +132,14 @@ Initial implementations SHOULD include:
 
 #### Scenario: provider does not access credential storage directly
 
-Given a provider needs auth state  
-When it prepares a request  
+Given a provider needs auth state
+When it prepares a request
 Then it SHALL obtain auth context through `AuthManager` rather than provider-specific storage logic.
 
 #### Scenario: missing credential is handled safely
 
-Given a provider requires auth state and none exists  
-When a data request is routed to that provider  
+Given a provider requires auth state and none exists
+When a data request is routed to that provider
 Then the platform SHALL fail clearly or select another provider according to auth policy.
 
 ---
@@ -161,26 +161,26 @@ Auth-aware routing SHALL combine with provider capability and health-aware routi
 
 #### Scenario: forbid authenticated providers
 
-Given a dataset has public and authenticated providers  
-When auth policy is `forbid_authenticated`  
+Given a dataset has public and authenticated providers
+When auth policy is `forbid_authenticated`
 Then the router SHALL not select authenticated providers.
 
 #### Scenario: prefer no-auth providers
 
-Given a public provider is available  
-When auth policy is `prefer_no_auth`  
+Given a public provider is available
+When auth policy is `prefer_no_auth`
 Then the router SHOULD select the public provider unless policy or source forces otherwise.
 
 #### Scenario: allow authenticated provider
 
-Given an authenticated provider has valid auth state  
-When auth policy is `allow_authenticated`  
+Given an authenticated provider has valid auth state
+When auth policy is `allow_authenticated`
 Then the router MAY select that provider according to health and priority.
 
 #### Scenario: require authenticated provider
 
-Given auth policy is `require_authenticated`  
-When no authenticated provider has valid auth state  
+Given auth policy is `require_authenticated`
+When no authenticated provider has valid auth state
 Then routing SHALL fail clearly.
 
 ---
@@ -200,8 +200,8 @@ These endpoints SHALL NOT expose credential material.
 
 #### Scenario: auth status is safe
 
-Given the service returns auth status  
-When the response is inspected  
+Given the service returns auth status
+When the response is inspected
 Then it SHALL include only safe metadata such as provider, availability, and expiry where known.
 
 ---
@@ -222,14 +222,14 @@ Forbidden endpoint groups include:
 
 #### Scenario: order endpoint absent
 
-Given the service is running  
-When route definitions are inspected  
+Given the service is running
+When route definitions are inspected
 Then order placement endpoints SHALL be absent.
 
 #### Scenario: account endpoint absent
 
-Given the service is running  
-When route definitions are inspected  
+Given the service is running
+When route definitions are inspected
 Then account and portfolio endpoints SHALL be absent.
 
 ---
@@ -240,14 +240,14 @@ TCBS authenticated mode SHALL be treated as experimental and explicit-only.
 
 #### Scenario: TCBS is not selected by default solely because auth exists
 
-Given TCBS auth state exists  
-When the user requests data with default routing policy  
+Given TCBS auth state exists
+When the user requests data with default routing policy
 Then TCBS authenticated mode SHALL NOT be selected solely because auth exists.
 
 #### Scenario: explicit TCBS source may use auth state
 
-Given TCBS auth state exists  
-When the user requests `source="TCBS"` with an auth policy that allows authenticated providers  
+Given TCBS auth state exists
+When the user requests `source="TCBS"` with an auth policy that allows authenticated providers
 Then the provider MAY use TCBS auth state for data-read requests.
 
 ---
@@ -269,8 +269,8 @@ Diagnostics SHALL NOT include credential material.
 
 #### Scenario: DataFrame attrs remain safe
 
-Given a public API returns a `DataFrame`  
-When auth metadata is attached to `DataFrame.attrs`  
+Given a public API returns a `DataFrame`
+When auth metadata is attached to `DataFrame.attrs`
 Then the metadata SHALL include only safe auth diagnostics.
 
 ---
@@ -281,12 +281,12 @@ Phase 4 SHALL preserve existing SDK usage.
 
 #### Scenario: public data request remains compatible
 
-Given a user calls a public no-auth data request  
-When Phase 4 auth infrastructure exists  
+Given a user calls a public no-auth data request
+When Phase 4 auth infrastructure exists
 Then the request SHALL continue to work without requiring login.
 
 #### Scenario: service mode is optional
 
-Given a user imports and uses `vnstock` as a Python SDK  
-When no service is running  
+Given a user imports and uses `vnstock` as a Python SDK
+When no service is running
 Then SDK usage SHALL remain available.
