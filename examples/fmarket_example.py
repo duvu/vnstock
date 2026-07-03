@@ -13,7 +13,7 @@ from __future__ import annotations
 from vnstock.explorer.fmarket.fund import Fund
 
 # A well-known Vietnamese equity fund used in the demos below
-FUND_SYMBOL = "SSIAM-VNX50"
+FUND_SYMBOL = "SSISCA"
 
 
 def section(title: str) -> None:
