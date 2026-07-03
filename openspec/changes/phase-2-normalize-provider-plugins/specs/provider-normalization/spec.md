@@ -18,14 +18,14 @@ The initial provider set SHOULD include:
 
 #### Scenario: provider plugin exists
 
-Given Phase 2 is implemented  
-When the provider registry is initialized  
+Given Phase 2 is implemented
+When the provider registry is initialized
 Then each supported core provider SHOULD be available as an internal provider plugin.
 
 #### Scenario: provider plugin exposes name
 
-Given a provider plugin is registered  
-When its metadata is inspected  
+Given a provider plugin is registered
+When its metadata is inspected
 Then it SHALL expose a stable provider name.
 
 ---
@@ -55,20 +55,20 @@ unsupported
 
 #### Scenario: provider declares OHLCV capability
 
-Given a provider supports `equity.ohlcv`  
-When the provider capabilities are requested  
+Given a provider supports `equity.ohlcv`
+When the provider capabilities are requested
 Then the capabilities SHALL include `equity.ohlcv` with `supported=true`.
 
 #### Scenario: provider marks unsupported dataset
 
-Given a provider does not support `fund.nav`  
-When capabilities are requested  
+Given a provider does not support `fund.nav`
+When capabilities are requested
 Then `fund.nav` SHALL either be absent or marked with `supported=false`.
 
 #### Scenario: provider declares experimental support
 
-Given a dataset is supported through an experimental or unofficial path  
-When capabilities are requested  
+Given a dataset is supported through an experimental or unofficial path
+When capabilities are requested
 Then the capability status SHOULD be `experimental` or `partial` rather than `stable`.
 
 ---
@@ -87,14 +87,14 @@ Limitations metadata SHOULD include:
 
 #### Scenario: provider limitations are inspectable
 
-Given a provider plugin is registered  
-When diagnostics are requested  
+Given a provider plugin is registered
+When diagnostics are requested
 Then diagnostics SHOULD include provider limitation metadata.
 
 #### Scenario: broker capabilities are excluded
 
-Given a provider has broker or account-related APIs outside the data layer  
-When provider capabilities are declared  
+Given a provider has broker or account-related APIs outside the data layer
+When provider capabilities are declared
 Then broker login, broker order, account, portfolio, and execution capabilities SHALL NOT be exposed as supported `vnstock` capabilities.
 
 ---
@@ -105,14 +105,14 @@ Each provider plugin SHALL map canonical dataset names to provider-specific fetc
 
 #### Scenario: supported dataset maps to handler
 
-Given a provider supports `equity.ohlcv`  
-When the provider receives a fetch request for `equity.ohlcv`  
+Given a provider supports `equity.ohlcv`
+When the provider receives a fetch request for `equity.ohlcv`
 Then the provider SHALL dispatch the request to the provider-specific OHLCV handler.
 
 #### Scenario: unsupported dataset raises clear error
 
-Given a provider does not support `fundamental.balance_sheet`  
-When the provider receives a fetch request for `fundamental.balance_sheet`  
+Given a provider does not support `fundamental.balance_sheet`
+When the provider receives a fetch request for `fundamental.balance_sheet`
 Then it SHALL raise `UnsupportedDatasetForProviderError` or an equivalent platform error.
 
 ---
@@ -123,8 +123,8 @@ Provider plugins SHALL normalize provider-native payloads to canonical dataset c
 
 #### Scenario: OHLCV normalizer outputs required columns
 
-Given a provider-native OHLCV fixture  
-When the provider normalizer runs  
+Given a provider-native OHLCV fixture
+When the provider normalizer runs
 Then the output `DataFrame` SHALL include:
 
 ```text
@@ -139,14 +139,14 @@ volume
 
 #### Scenario: missing required column fails clearly
 
-Given a provider-native payload cannot produce a required dataset column  
-When normalization runs  
+Given a provider-native payload cannot produce a required dataset column
+When normalization runs
 Then normalization SHALL fail with a clear contract or normalization error.
 
 #### Scenario: optional provider fields are preserved safely
 
-Given a provider-native payload has useful extra fields  
-When normalization runs  
+Given a provider-native payload has useful extra fields
+When normalization runs
 Then optional fields MAY be preserved if they do not violate the dataset contract and do not contain secrets.
 
 ---
@@ -169,14 +169,14 @@ Fixture categories SHOULD include:
 
 #### Scenario: valid fixture normalizes
 
-Given a valid provider fixture for `equity.ohlcv`  
-When the fixture is passed through the provider normalizer  
+Given a valid provider fixture for `equity.ohlcv`
+When the fixture is passed through the provider normalizer
 Then the output SHALL satisfy the `equity.ohlcv` dataset contract.
 
 #### Scenario: schema drift fixture is detected
 
-Given a provider fixture representing schema drift  
-When the fixture is passed through the provider normalizer or contract validator  
+Given a provider fixture representing schema drift
+When the fixture is passed through the provider normalizer or contract validator
 Then the test SHOULD detect the drift and fail clearly.
 
 ---
@@ -197,14 +197,14 @@ Provider contract tests SHALL verify:
 
 #### Scenario: provider contract test passes
 
-Given a provider plugin supports `equity.ohlcv`  
-When provider contract tests run  
+Given a provider plugin supports `equity.ohlcv`
+When provider contract tests run
 Then valid fixtures SHALL normalize and validate successfully.
 
 #### Scenario: unsupported dataset contract test passes
 
-Given a provider plugin does not support a requested dataset  
-When provider contract tests request that dataset  
+Given a provider plugin does not support a requested dataset
+When provider contract tests request that dataset
 Then the provider SHALL raise a clear unsupported dataset error.
 
 ---
@@ -224,14 +224,14 @@ The capability matrix SHOULD include:
 
 #### Scenario: capability matrix includes registered providers
 
-Given providers are registered  
-When the capability matrix is generated  
+Given providers are registered
+When the capability matrix is generated
 Then each registered provider SHALL appear in the matrix.
 
 #### Scenario: capability matrix is deterministic
 
-Given the same providers and capabilities  
-When the capability matrix is generated multiple times  
+Given the same providers and capabilities
+When the capability matrix is generated multiple times
 Then the output SHOULD be deterministic for testing and documentation.
 
 ---
@@ -258,8 +258,8 @@ Then the call SHALL continue to return a `pandas.DataFrame` if the provider supp
 
 #### Scenario: existing OHLCV call with auto/default source
 
-Given a user calls `Market().equity.ohlcv(...)` without explicit source  
-When the provider router resolves the request  
+Given a user calls `Market().equity.ohlcv(...)` without explicit source
+When the provider router resolves the request
 Then the public call SHALL remain backward-compatible with previous default behavior.
 
 ---
@@ -280,12 +280,12 @@ Provider plugins MUST NOT expose:
 
 #### Scenario: provider exposes out-of-scope capability
 
-Given a provider plugin declares `broker.order` or equivalent execution capability  
-When provider contract tests run  
+Given a provider plugin declares `broker.order` or equivalent execution capability
+When provider contract tests run
 Then the test SHOULD fail or flag the capability as out of scope.
 
 #### Scenario: provider has login-related legacy script
 
-Given the repository contains legacy login-related entry points  
-When Phase 2 normalizes providers  
+Given the repository contains legacy login-related entry points
+When Phase 2 normalizes providers
 Then provider normalization SHALL NOT expand login/session behavior and SHALL defer auth/session redesign to a later auth-specific phase.
