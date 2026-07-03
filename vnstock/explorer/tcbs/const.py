@@ -5,13 +5,19 @@ SCOPE / SAFETY GATE
 Only read-only market-data endpoints are defined here.  No broker, account,
 order, iCopy, margin, or transfer endpoint URLs are included.
 
-Unofficial public endpoints — the API contract may drift without notice.
+Authenticated endpoints — all market-data APIs now require a Bearer token.
+Use ``TCBSAuth`` to obtain a token, or set ``TCBS_BEARER_TOKEN`` env var.
+The API contract may drift without notice.
 """
 
 # ---------------------------------------------------------------------------
-# Base URL
+# Base URLs
 # ---------------------------------------------------------------------------
-_BASE_URL = "https://apipubaws.tcbs.com.vn"
+# All market-data APIs migrated to apiextaws (requires Bearer token auth)
+_BASE_URL = "https://apiextaws.tcbs.com.vn"
+
+# Legacy public base (decommissioned — routes return 404 as of 2025)
+_BASE_URL_PUBLIC_LEGACY = "https://apipubaws.tcbs.com.vn"
 
 # ---------------------------------------------------------------------------
 # OHLCV / Quote endpoints (fallback order: v2 stock → v2 insight → v1 insight)

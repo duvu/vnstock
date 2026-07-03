@@ -47,7 +47,7 @@ Rows: 132, Cols: ['time', 'open', 'high', 'low', 'close', 'volume']
 ============================================================
   Trading.price_board() — Live quotes for multiple symbols
 ============================================================
-  listing                 ...      bid_ask                         
+  listing                 ...      bid_ask
    symbol ceiling  floor  ... ask_2_volume ask_3_price ask_3_volume
 0     FPT   77500  67500  ...        33700       72200        58100
 1     VCB   66400  57800  ...        21100       62400        24200

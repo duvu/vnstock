@@ -22,6 +22,7 @@ from vnstock.core.utils.lookback import (
     interpret_lookback_length,
 )
 from vnstock.core.utils.user_agent import get_headers
+from vnstock.explorer.tcbs.auth import TCBSAuth
 from vnstock.explorer.tcbs.const import (
     _INTERVAL_MAP,
     _INTRADAY_CORE_COLUMNS,
@@ -60,6 +61,7 @@ class Quote:
     def __init__(
         self,
         symbol: str,
+        token: Optional[str] = None,
         random_agent: Optional[bool] = False,
         proxy_config: Optional[ProxyConfig] = None,
         show_log: Optional[bool] = False,
@@ -71,6 +73,9 @@ class Quote:
 
         Args:
             symbol: Mã chứng khoán (VD: 'FPT', 'VCB').
+            token: Bearer token TCBS. Nếu None, tự động tải từ
+                   TCBS_BEARER_TOKEN env var hoặc ~/.config/vnstock/tcbs_token.json.
+                   Chạy ``vnstock-tcbs-login`` để lấy token.
             random_agent: Sử dụng user agent ngẫu nhiên. Mặc định False.
             proxy_config: Cấu hình proxy. Mặc định None.
             show_log: Hiển thị log debug. Mặc định False.
@@ -79,9 +84,21 @@ class Quote:
         """
         self.symbol = symbol.upper()
         self.data_source = "TCBS"
+
+        # Resolve bearer token
+        _token = token or TCBSAuth.load_token()
         self.headers = get_headers(
             data_source=self.data_source, random_agent=random_agent
         )
+        if _token:
+            self.headers["Authorization"] = f"Bearer {_token}"
+        else:
+            logger.warning(
+                "Không tìm thấy TCBS token. Chạy `vnstock-tcbs-login` hoặc đặt "
+                "TCBS_BEARER_TOKEN để truy cập dữ liệu. "
+                "Các yêu cầu không có token sẽ thất bại (HTTP 401)."
+            )
+
         self.show_log = show_log
         self.interval_map = _INTERVAL_MAP
 

@@ -114,10 +114,11 @@ class TestQueryCapabilities:
         )
         assert len(caps) >= 1, f"{provider} should have ohlcv/equity capability"
 
-    def test_tcbs_ohlcv_no_auth(self):
+    def test_tcbs_ohlcv_requires_auth(self):
+        """TCBS OHLCV requires Bearer token auth (APIs moved to apiextaws in 2025)."""
         caps = query_capabilities(provider="TCBS", dataset_type="ohlcv")
         assert len(caps) >= 1
-        assert all(not c.requires_auth for c in caps)
+        assert all(c.requires_auth for c in caps)
 
     def test_tcbs_screener_is_experimental(self):
         caps = query_capabilities(provider="TCBS", dataset_type="screener")

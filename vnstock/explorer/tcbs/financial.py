@@ -19,6 +19,7 @@ from vnstock.core.registry import ProviderRegistry  # noqa: F401
 from vnstock.core.utils.client import ProxyConfig, send_request
 from vnstock.core.utils.logger import get_logger
 from vnstock.core.utils.user_agent import get_headers
+from vnstock.explorer.tcbs.auth import TCBSAuth
 from vnstock.explorer.tcbs.const import (
     _FINANCE_URL,
     _FINANCIAL_PERIOD_MAP,
@@ -69,6 +70,7 @@ class Finance:
         period: Optional[str] = "quarter",
         get_all: Optional[bool] = True,
         show_log: Optional[bool] = False,
+        token: Optional[str] = None,
         proxy_config: Optional[ProxyConfig] = None,
         proxy_mode: Optional[str] = None,
         proxy_list: Optional[List[str]] = None,
@@ -81,6 +83,8 @@ class Finance:
             period: Kỳ báo cáo — 'year' hoặc 'quarter'. Mặc định 'quarter'.
             get_all: Lấy tất cả kỳ lịch sử (isAll=true). Mặc định True.
             show_log: Hiển thị log debug. Mặc định False.
+            token: Bearer token TCBS. Nếu None, tự động tải từ
+                   TCBS_BEARER_TOKEN env var hoặc ~/.config/vnstock/tcbs_token.json.
             proxy_config: Cấu hình proxy. Mặc định None.
             proxy_mode: Chế độ proxy. Mặc định None.
             proxy_list: Danh sách proxy URLs. Mặc định None.
@@ -98,7 +102,16 @@ class Finance:
         self.yearly = _FINANCIAL_PERIOD_MAP[period]
         self.get_all = get_all
         self.data_source = "TCBS"
+
+        _token = token or TCBSAuth.load_token()
         self.headers = get_headers(data_source=self.data_source)
+        if _token:
+            self.headers["Authorization"] = f"Bearer {_token}"
+        else:
+            logger.warning(
+                "Không tìm thấy TCBS token. Chạy `vnstock-tcbs-login` để đăng nhập."
+            )
+
         self.show_log = show_log
 
         if proxy_config is None:

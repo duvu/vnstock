@@ -18,6 +18,7 @@ from vnstock.core.registry import ProviderRegistry  # noqa: F401
 from vnstock.core.utils.client import ProxyConfig, send_request
 from vnstock.core.utils.logger import get_logger
 from vnstock.core.utils.user_agent import get_headers
+from vnstock.explorer.tcbs.auth import TCBSAuth
 from vnstock.explorer.tcbs.const import (
     _PRICE_BOARD_MAP,
     _PRICE_BOARD_STANDARD_COLUMNS,
@@ -39,6 +40,7 @@ class Trading:
     def __init__(
         self,
         symbol: Optional[str] = None,
+        token: Optional[str] = None,
         random_agent: Optional[bool] = False,
         proxy_config: Optional[ProxyConfig] = None,
         show_log: Optional[bool] = False,
@@ -50,6 +52,8 @@ class Trading:
 
         Args:
             symbol: Mã chứng khoán. Optional cho market-wide queries.
+            token: Bearer token TCBS. Nếu None, tự động tải từ
+                   TCBS_BEARER_TOKEN env var hoặc ~/.config/vnstock/tcbs_token.json.
             random_agent: Sử dụng user agent ngẫu nhiên. Mặc định False.
             proxy_config: Cấu hình proxy. Mặc định None.
             show_log: Hiển thị log debug. Mặc định False.
@@ -58,9 +62,18 @@ class Trading:
         """
         self.symbol = symbol.upper() if symbol else None
         self.data_source = "TCBS"
+
+        _token = token or TCBSAuth.load_token()
         self.headers = get_headers(
             data_source=self.data_source, random_agent=random_agent
         )
+        if _token:
+            self.headers["Authorization"] = f"Bearer {_token}"
+        else:
+            logger.warning(
+                "Không tìm thấy TCBS token. Chạy `vnstock-tcbs-login` để đăng nhập."
+            )
+
         self.show_log = show_log
 
         if proxy_config is None:
