@@ -13,9 +13,9 @@ This fork is maintained as a **data-only market data layer**. It intentionally e
 | Area | Status |
 |---|---|
 | Unified UI | Available through `Market`, `Reference`, `Fundamental`, `Retail` |
-| Vietnam equity OHLCV | KBS default, with VCI/DNSE alternatives for core equity market paths |
-| Price board / quote | KBS default, VCI/DNSE alternatives for core equity market paths |
-| Intraday trades | KBS default, VCI/DNSE alternatives where supported |
+| Vietnam equity OHLCV | KBS default, with VCI/DNSE/TCBS alternatives for core equity market paths |
+| Price board / quote | KBS default, VCI/DNSE/TCBS alternatives for core equity market paths |
+| Intraday trades | KBS default, VCI/DNSE alternatives where supported (TCBS experimental) |
 | Index / ETF / futures / warrant / bond market paths | Primarily KBS-backed |
 | Global OHLCV | MSN/FMP where available |
 | Fund data | FMarket-backed fund NAV/holding data |
@@ -70,6 +70,15 @@ bars_dnse = market.equity.ohlcv(
     end="2024-06-30",
     interval="1D",
     source="DNSE",
+)
+
+# TCBS provider — unofficial public endpoints, data-only, not the default
+bars_tcbs = market.equity.ohlcv(
+    symbol="FPT",
+    start="2024-01-01",
+    end="2024-06-30",
+    interval="1D",
+    source="TCBS",
 )
 
 # Price board snapshot
@@ -181,6 +190,7 @@ Optional filters:
 
 ```bash
 VNSTOCK_LIVE_TESTS=true VNSTOCK_LIVE_PROVIDERS=DNSE pytest tests/live/providers -m live
+VNSTOCK_LIVE_TESTS=true VNSTOCK_LIVE_PROVIDERS=TCBS VNSTOCK_LIVE_SYMBOLS=FPT pytest tests/live/providers/test_tcbs_live.py -m live -v
 VNSTOCK_LIVE_TESTS=true VNSTOCK_LIVE_SYMBOLS=FPT pytest tests/live/providers -m live
 ```
 
@@ -202,6 +212,24 @@ Targeted provider/quality checks:
 ```bash
 PYTHONPATH=. pytest tests/unit/core/quality tests/unit/core/provider tests/contracts/providers -q
 ```
+
+---
+
+## Examples
+
+Runnable scripts demonstrating every data provider:
+
+```bash
+python examples/kbs_example.py        # KBS  — default provider
+python examples/vci_example.py        # VCI
+python examples/dnse_example.py       # DNSE
+python examples/msn_example.py        # MSN
+python examples/tcbs_example.py       # TCBS
+FMP_API_KEY=<key> python examples/fmp_example.py    # FMP (key required)
+python examples/fmarket_example.py    # FMarket funds
+```
+
+See [`examples/README.md`](examples/README.md) for the full provider reference table.
 
 ---
 

@@ -62,7 +62,7 @@ PRICE_BOARD_COLUMNS = [
 def _baseline_schemas() -> dict[tuple[str, str], DatasetSchema]:
     """Return registry of baseline schemas keyed by (provider, dataset_type)."""
     schemas: dict[tuple[str, str], DatasetSchema] = {}
-    for provider in ("dnse", "kbs", "vci"):
+    for provider in ("dnse", "kbs", "vci", "tcbs"):
         schemas[(provider, "ohlcv")] = DatasetSchema(
             dataset_type="ohlcv",
             provider=provider,

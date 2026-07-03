@@ -19,8 +19,12 @@ class TestBuildMatrix:
     def test_all_known_providers_present(self):
         result = build_matrix()
         providers = {p.lower() for p in result["providers"]}
-        for expected in ("KBS", "VCI", "DNSE"):
+        for expected in ("KBS", "VCI", "DNSE", "TCBS"):
             assert expected.lower() in providers
+
+    def test_tcbs_supports_equity_ohlcv(self):
+        result = build_matrix()
+        assert result["matrix"]["TCBS"]["ohlcv"]["equity"] is True
 
     def test_all_dataset_types_present(self):
         result = build_matrix()

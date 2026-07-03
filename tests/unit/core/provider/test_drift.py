@@ -67,6 +67,11 @@ class TestDetectDriftNoIssues:
         issues = detect_drift(df, "dnse", "ohlcv")
         assert issues == []
 
+    def test_valid_ohlcv_tcbs_no_drift(self):
+        df = _make_valid_ohlcv()
+        issues = detect_drift(df, "tcbs", "ohlcv")
+        assert issues == []
+
     def test_valid_intraday_no_drift(self):
         df = _make_valid_intraday()
         issues = detect_drift(df, "vci", "intraday_trades")

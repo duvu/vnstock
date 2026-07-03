@@ -22,18 +22,18 @@ PoolKey = Tuple[str, ...]
 POOLS: Dict[PoolKey, List[str]] = {
     # ── Market / Unified UI nested entries ────────────────────────────────────
     # key = (domain, subdomain, method)
-    ("Market", "equity", "ohlcv"): ["KBS", "VCI", "DNSE"],
-    ("Market", "equity", "trades"): ["KBS", "VCI", "DNSE"],
-    ("Market", "equity", "quote"): ["KBS", "VCI", "DNSE"],
+    ("Market", "equity", "ohlcv"): ["KBS", "VCI", "DNSE", "TCBS"],
+    ("Market", "equity", "trades"): ["KBS", "VCI", "DNSE", "TCBS"],
+    ("Market", "equity", "quote"): ["KBS", "VCI", "DNSE", "TCBS"],
     ("Market", "etf", "ohlcv"): ["KBS", "VCI"],
     ("Market", "futures", "ohlcv"): ["KBS", "DNSE"],
     ("Market", "warrant", "ohlcv"): ["KBS", "VCI"],
     ("Market", "index", "ohlcv"): ["KBS", "VCI"],
     # ── Legacy flat domain entries ─────────────────────────────────────────────
     # key = (domain, method)
-    ("equity_market", "ohlcv"): ["KBS", "VCI", "DNSE"],
-    ("equity_market", "price_board"): ["KBS", "VCI", "DNSE"],
-    ("equity_market", "intraday"): ["KBS", "VCI", "DNSE"],
+    ("equity_market", "ohlcv"): ["KBS", "VCI", "DNSE", "TCBS"],
+    ("equity_market", "price_board"): ["KBS", "VCI", "DNSE", "TCBS"],
+    ("equity_market", "intraday"): ["KBS", "VCI", "DNSE", "TCBS"],
 }
 
 

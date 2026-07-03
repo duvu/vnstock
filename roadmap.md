@@ -32,6 +32,7 @@ The next priority is not scanner logic. The next priority is making data collect
 | Data-only package boundary | Done | Non-data APIs should remain outside core package. |
 | Unified UI | Done | Main entrypoints are `Market`, `Reference`, `Fundamental`, `Retail`. |
 | DNSE provider | Done | Adds OHLCV and price board coverage; intraday support is constrained. |
+| TCBS provider | Done | OHLCV, price board, company reference, financial statements, symbol industry, screener (experimental). Unofficial public endpoints. |
 | Cache layer | Done | Memory/SQLite cache exists. Live-data TTL discipline still needs explicit policy. |
 | Provider router | Partial | Round-robin + cooldown exists. Health-aware routing is not yet integrated. |
 | Data quality layer | Done for market data | OHLCV, price board, intraday validators exist. Reference/fundamental contracts remain future work. |
@@ -44,15 +45,15 @@ The next priority is not scanner logic. The next priority is making data collect
 
 | Capability | Providers | Status / Notes |
 |---|---|---|
-| OHLCV history 1m–1M | KBS, VCI, DNSE, MSN, FMP | Core capability available. Needs batch API and stronger comparison. |
-| Multi-symbol price board | KBS, VCI, DNSE | Available. Contains foreign investor snapshot fields where provider returns them. |
-| Intraday tick tape today-only | KBS, VCI, DNSE | Available where provider supports it. Historical tick replay still missing. |
+| OHLCV history 1m–1M | KBS, VCI, DNSE, TCBS, MSN, FMP | Core capability available. Needs batch API and stronger comparison. |
+| Multi-symbol price board | KBS, VCI, DNSE, TCBS | Available. Contains foreign investor snapshot fields where provider returns them. |
+| Intraday tick tape today-only | KBS, VCI, DNSE (TCBS experimental) | Available where provider supports it. Historical tick replay still missing. |
 | Foreign investor snapshot | KBS primarily; DNSE/VCI to verify | Fields include `foreign_buy_volume`, `foreign_sell_volume`, `foreign_room` where available. |
 | Historical foreign flow | Not implemented | Needs endpoint discovery, schema, fixtures, quality contract. |
 | Put-through session total | KBS | Available as session data, not a full analytical dataset yet. |
 | Open interest snapshot | KBS derivatives | Snapshot only. Historical OI remains investigation item. |
 | Vietnam sector/index OHLCV | VCI, KBS | Available. Historical index membership still needs work. |
-| Fundamental/company data | KBS, VCI, FMarket | Available but not yet covered by quality contracts. |
+| Fundamental/company data | KBS, VCI, TCBS, FMarket | Available but not yet covered by quality contracts. |
 | SSI provider | Not implemented | FastConnect Data is official but credentialed; iBoard public API needs discovery. |
 | ABS provider | Not implemented | Public priceboard is only a discovery candidate. |
 

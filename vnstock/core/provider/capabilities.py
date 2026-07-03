@@ -202,6 +202,87 @@ _FMARKET_FUND_NAV = ProviderCapability(
 )
 
 # ---------------------------------------------------------------------------
+# TCBS capabilities
+# ---------------------------------------------------------------------------
+_TCBS_OHLCV_EQUITY = ProviderCapability(
+    provider="TCBS",
+    dataset_type="ohlcv",
+    asset_class="equity",
+    method="history",
+    intervals=["1m", "5m", "15m", "30m", "1H", "1D", "1W", "1M"],
+    supports_history=True,
+    supports_intraday=True,
+    is_live_testable=True,
+    notes=(
+        "TCBS bars-long-term OHLCV. Endpoint fallback order: "
+        "/stock/v2/stock/bars-long-term → /stock-insight/v2 → /stock-insight/v1. "
+        "Unofficial public endpoint."
+    ),
+)
+
+_TCBS_PRICE_BOARD_EQUITY = ProviderCapability(
+    provider="TCBS",
+    dataset_type="price_board",
+    asset_class="equity",
+    method="price_board",
+    intervals=[],
+    supports_live_snapshot=True,
+    supports_batch=True,
+    is_live_testable=True,
+    notes="TCBS /stock/v1/stock/second-tc-price price board. Unofficial public endpoint.",
+)
+
+_TCBS_INTRADAY_EQUITY = ProviderCapability(
+    provider="TCBS",
+    dataset_type="intraday_trades",
+    asset_class="equity",
+    method="intraday",
+    intervals=[],
+    supports_intraday=True,
+    is_live_testable=True,
+    notes="TCBS /stock/v1/intraday/{symbol}/his/paging. Experimental; unofficial endpoint.",
+)
+
+_TCBS_COMPANY_OVERVIEW = ProviderCapability(
+    provider="TCBS",
+    dataset_type="company_overview",
+    asset_class="equity",
+    method="overview",
+    intervals=[],
+    supports_history=False,
+    is_live_testable=True,
+    notes="TCBS company overview via tcanalysis endpoints. Unofficial public endpoint.",
+)
+
+_TCBS_FINANCIAL_STATEMENTS = ProviderCapability(
+    provider="TCBS",
+    dataset_type="financial_statements",
+    asset_class="equity",
+    method="balance_sheet",
+    intervals=[],
+    supports_history=True,
+    is_live_testable=True,
+    notes=(
+        "TCBS /stock-insight/v1/finance/{symbol}/{report_type}. "
+        "Supports balance-sheet, income-statement, cash-flow, financialratio. "
+        "Unofficial public endpoint."
+    ),
+)
+
+_TCBS_SCREENER = ProviderCapability(
+    provider="TCBS",
+    dataset_type="screener",
+    asset_class="equity",
+    method="scan",
+    intervals=[],
+    is_live_testable=False,
+    notes=(
+        "TCBS /ligo/v1/watchlist/preview screener. EXPERIMENTAL — unofficial POST endpoint. "
+        "Vendor signal fields are raw data, not investment advice."
+    ),
+)
+
+# ---------------------------------------------------------------------------
 # Master capability list
 # ---------------------------------------------------------------------------
 CAPABILITIES: List[ProviderCapability] = [
@@ -219,6 +300,13 @@ CAPABILITIES: List[ProviderCapability] = [
     _DNSE_OHLCV_EQUITY,
     _DNSE_PRICE_BOARD_EQUITY,
     _DNSE_INTRADAY_EQUITY,
+    # TCBS
+    _TCBS_OHLCV_EQUITY,
+    _TCBS_PRICE_BOARD_EQUITY,
+    _TCBS_INTRADAY_EQUITY,
+    _TCBS_COMPANY_OVERVIEW,
+    _TCBS_FINANCIAL_STATEMENTS,
+    _TCBS_SCREENER,
     # MSN
     _MSN_OHLCV_EQUITY,
     # FMP

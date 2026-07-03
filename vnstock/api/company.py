@@ -50,10 +50,10 @@ class Company(BaseAdapter):
         self.random_agent = random_agent
         self.show_log = show_log
 
-        # Validate the source to only accept kbs, vci
-        if source.lower() not in ["kbs", "vci"]:
+        # Validate the source to only accept kbs, vci, tcbs
+        if source.lower() not in ["kbs", "vci", "tcbs"]:
             raise ValueError(
-                "Lớp Company chỉ nhận giá trị tham số source là 'VCI' hoặc 'KBS'."
+                "Lớp Company chỉ nhận giá trị tham số source là 'VCI', 'KBS' hoặc 'TCBS'."
             )
 
         # BaseAdapter will discover vnstock.explorer.<real_source>.company

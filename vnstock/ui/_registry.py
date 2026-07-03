@@ -130,7 +130,7 @@ MAP = {
         ),
     },
     "equity_market": {
-        # Default source is KBS. Pass source="DNSE" or source="VCI" to use an alternative.
+        # Default source is KBS. Pass source="DNSE", source="VCI", or source="TCBS" to use an alternative.
         "ohlcv": (
             "api",
             "api.quote",
@@ -138,7 +138,7 @@ MAP = {
             "ohlcv",
             "KBS",
             "DataFrame",
-            "Historical OHLCV bars. Alternative sources: VCI, DNSE.",
+            "Historical OHLCV bars. Alternative sources: VCI, DNSE, TCBS.",
         ),
         "quote": (
             "api",
@@ -147,7 +147,7 @@ MAP = {
             "price_board",
             "KBS",
             "DataFrame",
-            "Real-time pricing board data. Alternative sources: VCI, DNSE.",
+            "Real-time pricing board data. Alternative sources: VCI, DNSE, TCBS.",
         ),
         "trades": (
             "api",
@@ -156,7 +156,7 @@ MAP = {
             "intraday",
             "KBS",
             "DataFrame",
-            "Tick-by-tick trade tape. Alternative sources: VCI, DNSE.",
+            "Tick-by-tick trade tape. Alternative sources: VCI, DNSE, TCBS.",
         ),
     },
     "index_market": {
@@ -296,7 +296,7 @@ MAP = {
                 "info",
                 "KBS",
                 "DataFrame",
-                "Get company overview.",
+                "Get company overview. Alternative sources: VCI, TCBS.",
             ),
             "shareholders": (
                 "api",
@@ -305,7 +305,7 @@ MAP = {
                 "shareholders",
                 "KBS",
                 "DataFrame",
-                "List major shareholders.",
+                "List major shareholders. Alternative sources: VCI, TCBS.",
             ),
             "officers": (
                 "api",
@@ -314,7 +314,7 @@ MAP = {
                 "officers",
                 "KBS",
                 "DataFrame",
-                "List company leadership.",
+                "List company leadership. Alternative sources: VCI, TCBS.",
             ),
             "subsidiaries": (
                 "api",
@@ -323,7 +323,7 @@ MAP = {
                 "subsidiaries",
                 "KBS",
                 "DataFrame",
-                "List subsidiaries.",
+                "List subsidiaries. Alternative sources: VCI, TCBS.",
             ),
             "ownership": (
                 "api",
@@ -341,7 +341,7 @@ MAP = {
                 "insider_trading",
                 "KBS",
                 "DataFrame",
-                "Insider trading history.",
+                "Insider trading history. Alternative sources: VCI, TCBS.",
             ),
             "capital_history": (
                 "api",
@@ -359,7 +359,7 @@ MAP = {
                 "news",
                 "KBS",
                 "DataFrame",
-                "Company related news.",
+                "Company related news. Alternative sources: VCI, TCBS.",
             ),
             "events": (
                 "api",
@@ -368,7 +368,7 @@ MAP = {
                 "events",
                 "KBS",
                 "DataFrame",
-                "Upcoming corporate events.",
+                "Upcoming corporate events. Alternative sources: VCI, TCBS.",
             ),
         },
         "equity": {
@@ -637,7 +637,7 @@ MAP = {
                 "ohlcv",
                 "KBS",
                 "DataFrame",
-                "Historical OHLCV bars.",
+                "Historical OHLCV bars. Alternative sources: VCI, DNSE, TCBS.",
             ),
             "quote": (
                 "api",
@@ -646,7 +646,7 @@ MAP = {
                 "price_board",
                 "KBS",
                 "DataFrame",
-                "Real-time pricing board data.",
+                "Real-time pricing board data. Alternative sources: VCI, DNSE, TCBS.",
             ),
             "trades": (
                 "api",
@@ -655,7 +655,7 @@ MAP = {
                 "intraday",
                 "KBS",
                 "DataFrame",
-                "Tick-by-tick trade tape.",
+                "Tick-by-tick trade tape. Alternative sources: VCI, DNSE, TCBS.",
             ),
         },
         "index": {
@@ -875,7 +875,7 @@ MAP = {
                 "balance_sheet",
                 "KBS",
                 "DataFrame",
-                "Get balance sheet.",
+                "Get balance sheet. Alternative sources: VCI, TCBS.",
             ),
             "cash_flow": (
                 "api",
@@ -884,7 +884,7 @@ MAP = {
                 "cash_flow",
                 "KBS",
                 "DataFrame",
-                "Get cash flow.",
+                "Get cash flow. Alternative sources: VCI, TCBS.",
             ),
             "income_statement": (
                 "api",
@@ -893,7 +893,7 @@ MAP = {
                 "income_statement",
                 "KBS",
                 "DataFrame",
-                "Get income statement.",
+                "Get income statement. Alternative sources: VCI, TCBS.",
             ),
             "ratio": (
                 "api",
@@ -902,7 +902,7 @@ MAP = {
                 "ratio",
                 "KBS",
                 "DataFrame",
-                "Financial ratios.",
+                "Financial ratios. Alternative sources: VCI, TCBS.",
             ),
         }
     },
