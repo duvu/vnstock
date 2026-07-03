@@ -217,6 +217,64 @@ class BaseUI:
             f"Method '{method_name}' not implemented for domain '{domain_name}'"
         )
 
+    def _plugin_dispatch(
+        self,
+        dataset: str,
+        params: dict | None = None,
+        *,
+        source: str | None = None,
+        validate: bool = False,
+        quality_mode: str = "warn",
+        return_result: bool = False,
+        allow_legacy_fallback: bool = False,
+    ) -> Any:
+        """Route a dataset request through the PluginRuntime.
+
+        This is the new routing path for migrated datasets.  Non-migrated
+        domains continue to use :meth:`_dispatch`.
+
+        Args:
+            dataset: Dotted dataset name, e.g. ``"equity.ohlcv"``.
+            params: Fetch parameters.
+            source: Explicit provider name or ``None`` for auto selection.
+            validate: Validate output against the DatasetContract.
+            quality_mode: Quality validation mode (``"off"`` / ``"warn"`` /
+                ``"strict"``).
+            return_result: Return :class:`DataResult` instead of DataFrame.
+            allow_legacy_fallback: When ``True``, fall back to legacy
+                :meth:`_dispatch` if the PluginRuntime raises an error.
+                Disabled by default for migrated datasets.
+
+        Returns:
+            :class:`pandas.DataFrame` or :class:`DataResult`.
+        """
+        from vnstock.core.runtime import default_runtime
+
+        try:
+            rt = default_runtime()
+            return rt.fetch(
+                dataset,
+                params or {},
+                source=source,
+                validate=validate,
+                quality_mode=quality_mode,
+                return_result=return_result,
+            )
+        except Exception as _exc:
+            if allow_legacy_fallback:
+                import warnings as _w
+
+                _w.warn(
+                    f"PluginRuntime failed for dataset '{dataset}' "
+                    f"({type(_exc).__name__}: {_exc}). "
+                    "Falling back to legacy dispatch. "
+                    "Set allow_legacy_fallback=False to disable this behaviour.",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+                return None  # Caller must handle None by re-routing via _dispatch
+            raise
+
     def _execute_dispatch(
         self,
         module_type: str,

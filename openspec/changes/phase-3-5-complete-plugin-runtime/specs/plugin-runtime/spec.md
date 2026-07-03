@@ -17,14 +17,14 @@ The runtime SHALL:
 
 #### Scenario: runtime fetches OHLCV
 
-Given `PluginRuntime` is configured with provider plugins  
-When `fetch("equity.ohlcv", params={...})` is called  
+Given `PluginRuntime` is configured with provider plugins
+When `fetch("equity.ohlcv", params={...})` is called
 Then the runtime SHALL resolve a provider through `PluginRouter` and return a `pandas.DataFrame`.
 
 #### Scenario: runtime returns DataResult
 
-Given `return_result=True`  
-When a dataset request succeeds  
+Given `return_result=True`
+When a dataset request succeeds
 Then the runtime SHALL return `DataResult` instead of only `pandas.DataFrame`.
 
 ---
@@ -35,20 +35,20 @@ Public data APIs SHALL route supported datasets through `PluginRuntime`.
 
 #### Scenario: Market OHLCV uses plugin runtime
 
-Given a user calls `Market().equity.ohlcv(...)`  
-When `equity.ohlcv` is supported by provider plugins  
+Given a user calls `Market().equity.ohlcv(...)`
+When `equity.ohlcv` is supported by provider plugins
 Then the call SHALL route through `PluginRuntime`.
 
 #### Scenario: Reference symbols use plugin runtime
 
-Given a user calls the public symbols API  
-When `reference.symbols` is supported by provider plugins  
+Given a user calls the public symbols API
+When `reference.symbols` is supported by provider plugins
 Then the call SHALL route through `PluginRuntime`.
 
 #### Scenario: Fundamental balance sheet uses plugin runtime
 
-Given a user calls the public balance sheet API  
-When `fundamental.balance_sheet` is supported by provider plugins  
+Given a user calls the public balance sheet API
+When `fundamental.balance_sheet` is supported by provider plugins
 Then the call SHALL route through `PluginRuntime`.
 
 ---
@@ -59,14 +59,14 @@ Public APIs SHALL NOT silently bypass `PluginRuntime` for migrated datasets.
 
 #### Scenario: migrated dataset does not use legacy dispatch
 
-Given `equity.ohlcv` is marked migrated  
-When a public OHLCV request is made  
+Given `equity.ohlcv` is marked migrated
+When a public OHLCV request is made
 Then the request SHALL NOT directly call legacy provider dispatch outside the plugin runtime.
 
 #### Scenario: legacy client remains internal
 
-Given a provider plugin wraps an old provider client  
-When the plugin fetches data  
+Given a provider plugin wraps an old provider client
+When the plugin fetches data
 Then the old client MAY be used internally, but the public API SHALL still pass through `PluginRuntime`.
 
 ---
@@ -77,14 +77,14 @@ Legacy fallback SHALL be explicit and observable.
 
 #### Scenario: fallback disabled for migrated dataset
 
-Given `equity.ohlcv` is migrated  
-When plugin runtime fails  
+Given `equity.ohlcv` is migrated
+When plugin runtime fails
 Then the runtime SHALL NOT silently fallback to legacy dispatch by default.
 
 #### Scenario: fallback emits diagnostics
 
-Given fallback is explicitly enabled for an unmigrated dataset  
-When fallback is used  
+Given fallback is explicitly enabled for an unmigrated dataset
+When fallback is used
 Then the returned result diagnostics SHALL identify the runtime path as `legacy_fallback`.
 
 ---
@@ -95,13 +95,13 @@ Then the returned result diagnostics SHALL identify the runtime path as `legacy_
 
 #### Scenario: default registry contains core providers
 
-Given `default_plugin_registry()` is called  
+Given `default_plugin_registry()` is called
 Then the registry SHOULD include KBS, VCI, DNSE, TCBS, FMarket, MSN, and FMP where available.
 
 #### Scenario: default registry exposes capability matrix
 
-Given the default registry is created  
-When `capability_matrix()` is called  
+Given the default registry is created
+When `capability_matrix()` is called
 Then the matrix SHALL include registered provider capabilities.
 
 ---
@@ -112,14 +112,14 @@ Every plugin runtime fetch SHALL produce a `DataResult` internally.
 
 #### Scenario: DataFrame attrs include runtime metadata
 
-Given a public API returns a `DataFrame`  
-When the request is served by `PluginRuntime`  
+Given a public API returns a `DataFrame`
+When the request is served by `PluginRuntime`
 Then `DataFrame.attrs` SHOULD include dataset, provider, quality status, diagnostics, and fetch timestamp metadata.
 
 #### Scenario: diagnostics include runtime path
 
-Given a request is served by `PluginRuntime`  
-When diagnostics are inspected  
+Given a request is served by `PluginRuntime`
+When diagnostics are inspected
 Then diagnostics SHALL include runtime path metadata.
 
 ---
@@ -130,14 +130,14 @@ Then diagnostics SHALL include runtime path metadata.
 
 #### Scenario: successful fetch records success
 
-Given a provider fetch succeeds  
-When the runtime returns data  
+Given a provider fetch succeeds
+When the runtime returns data
 Then provider health SHALL record success.
 
 #### Scenario: failed fetch records failure
 
-Given a provider fetch fails  
-When the runtime handles the error  
+Given a provider fetch fails
+When the runtime handles the error
 Then provider health SHALL record failure.
 
 ---
@@ -148,14 +148,14 @@ Then provider health SHALL record failure.
 
 #### Scenario: required columns are present
 
-Given a provider returns data for `equity.ohlcv`  
-When validation is enabled  
+Given a provider returns data for `equity.ohlcv`
+When validation is enabled
 Then required OHLCV columns SHALL be checked.
 
 #### Scenario: missing required column fails clearly
 
-Given provider output is missing a required column  
-When validation is enabled  
+Given provider output is missing a required column
+When validation is enabled
 Then the runtime SHALL fail with a clear contract validation error.
 
 ---
@@ -166,14 +166,14 @@ Migrating to plugin runtime SHALL preserve public behavior where practical.
 
 #### Scenario: public call still returns DataFrame
 
-Given a user calls an existing public data API  
-When the request is served by `PluginRuntime`  
+Given a user calls an existing public data API
+When the request is served by `PluginRuntime`
 Then the default return type SHALL remain `pandas.DataFrame`.
 
 #### Scenario: source parameter remains compatible
 
-Given a user passes `source="KBS"` or `source="auto"`  
-When the request is served by `PluginRuntime`  
+Given a user passes `source="KBS"` or `source="auto"`
+When the request is served by `PluginRuntime`
 Then provider selection SHALL respect the source parameter through `PluginRouter`.
 
 ---
@@ -184,8 +184,8 @@ Phase 4 service and auth-aware data endpoints SHALL use `PluginRuntime` as the o
 
 #### Scenario: service endpoint does not call legacy provider directly
 
-Given Phase 4 local data service is implemented  
-When a service endpoint handles a data request  
+Given Phase 4 local data service is implemented
+When a service endpoint handles a data request
 Then it SHALL call `PluginRuntime`, not legacy provider dispatch.
 
 ---
@@ -196,6 +196,6 @@ Completing plugin runtime SHALL NOT introduce non-data platform capabilities.
 
 #### Scenario: plugin runtime rejects out-of-scope capability
 
-Given a provider exposes a non-data capability  
-When it is registered or routed  
+Given a provider exposes a non-data capability
+When it is registered or routed
 Then the platform SHOULD reject or flag it as out of scope.
