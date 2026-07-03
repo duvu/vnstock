@@ -2,38 +2,19 @@
 ============================================================
   Quote.history() — Daily OHLCV
 ============================================================
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃                                                                                 ┃
-┃  ⚠️ THÔNG BÁO QUAN TRỌNG                                                        ┃
-┃                                                                                 ┃
-┃  Phát hành vnstock 4.0.1 cung cấp sửa lỗi quan trọng và bổ sung giao diện API   ┃
-┃  thống nhất (Unified UI), tăng tính ổn định của code.                           ┃
-┃  Cập nhật: pip install vnstock -U                                               ┃
-┃  AI Agent Guide: https://github.com/vnstock-hq/vnstock-agent-guide/             ┃
-┃                                                                                 ┃
-┃  ────────────────────────────────────────────────────────────────────────────── ┃
-┃                                                                                 ┃
-┃  🚀 VNSTOCK INSIDERS PROGRAM - NÂNG TẦM TRẢI NGHIỆM CỦA BẠN! 🚀                 ┃
-┃                                                                                 ┃
-┃  Nếu bạn cảm thấy khó chịu với các thông báo và quảng cáo:                      ┃
-┃                                                                                 ┃
-┃  ✨ Ẩn toàn bộ thông báo và quảng cáo phiền hà                                  ┃
-┃  🔓 Mở rộng khả năng sử dụng API tối đa                                         ┃
-┃  ⚡ Tăng tốc tải dữ liệu từ 5-8 lần                                              ┃
-┃  📈 Tăng giới hạn truy cập API lên đến 5 lần                                    ┃
-┃  🤖 Dùng AI Agent viết code hiệu quả với tài liệu Agent Guide                    ┃
-┃                                                                                 ┃
-┃  🔗 Tham gia ngay: https://vnstocks.com/insiders-program#tiers                  ┃
-┃                                                                                 ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-[ERROR] object of type 'NoneType' has no len()
+[ERROR] DNSE trả về dữ liệu rỗng cho mã FPT. API DNSE chỉ hoạt động từ địa chỉ IP tại Việt Nam. Vui lòng sử dụng proxy tại Việt Nam hoặc chuyển sang nhà cung cấp khác (KBS/VCI).
 
 ============================================================
   Quote.intraday() — Intraday trades
 ============================================================
-[ERROR] Failed to fetch data: 404 - Not Found
+                 time  price  volume
+0 2026-07-03 09:15:00   72.6   27600
+1 2026-07-03 09:16:00   72.7    5700
+2 2026-07-03 09:17:00   72.7    1600
+3 2026-07-03 09:18:00   72.7    6900
+4 2026-07-03 09:19:00   72.7    9800
 
 ============================================================
   Trading.price_board() — Live quotes for multiple symbols
 ============================================================
-[ERROR] Failed to fetch data: 500 - Internal Server Error
+[ERROR] DNSE price_board không khả dụng: endpoint /chart-api/v2/quotes hiện trả về lỗi 500. Vui lòng sử dụng nhà cung cấp khác (KBS/VCI) để lấy bảng giá realtime.

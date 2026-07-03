@@ -6,10 +6,12 @@ _BASE_URL = "https://services.entrade.com.vn"
 # OHLCV history endpoint
 _OHLC_URL = f"{_BASE_URL}/chart-api/v2/ohlcs/stock"
 
-# Intraday tick endpoint
-_INTRADAY_URL = f"{_BASE_URL}/dnse-order-api/v2/user/transaction-buy-sell-history"
+# Intraday tick endpoint — uses the same chart-api with resolution=1 (1-minute OHLCV).
+# Note: like the stock OHLCV endpoint, this returns {"t": null, ...} for non-Vietnamese IPs.
+_INTRADAY_URL = f"{_BASE_URL}/chart-api/v2/ohlcs/stock"
 
-# Price board (multi-symbol snapshot) endpoint
+# Price board (multi-symbol snapshot) endpoint — currently returns 500 for the /quotes path.
+# Retained for forward compatibility; callers should handle failure gracefully.
 _PRICE_BOARD_URL = f"{_BASE_URL}/chart-api/v2/quotes"
 
 # Interval map: user-friendly key → DNSE API resolution string
