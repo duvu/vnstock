@@ -108,6 +108,11 @@ debug_*.py
 tests/common/test_data_explorer.py
 tests/test_notebook.ipynb
 
+# AI tooling (local only)
+.opencode/
+.serena/
+uv.lock
+
 # Packaging
 pip-log.txt
 pip-delete-this-directory.txt
