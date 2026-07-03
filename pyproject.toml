@@ -5,14 +5,17 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "vnstock"
 version = "4.0.4"
-description = "A beginner-friendly yet powerful Python toolkit for financial analysis and automation — built to make modern investing accessible to everyone"
+description = "Data-only market data toolkit and local data-service platform for Vietnamese financial data"
 readme = "README.md"
 authors = [
   { name = "Thinh Vu", email = "support@vnstocks.com" },
 ]
+maintainers = [
+  { name = "duvu" },
+]
 license = { text = "Custom: Personal, research, non-commercial; contact support@vnstocks.com for other use" }
 requires-python = ">=3.10"
-keywords = ["vnstock", "finance", "vietnam", "stock market", "analysis", "API"]
+keywords = ["vnstock", "market-data", "vietnam", "stock market", "data-platform", "API"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -64,9 +67,9 @@ dev = [
 vnstock-tcbs-login = "vnstock.cli.tcbs_login:main"
 
 [project.urls]
-Documentation = "https://vnstocks.com/docs"
-Source = "https://github.com/thinh-vu/vnstock"
-IssueTracker = "https://github.com/thinh-vu/vnstock/issues"
+Documentation = "https://github.com/duvu/vnstock#readme"
+Source = "https://github.com/duvu/vnstock"
+IssueTracker = "https://github.com/duvu/vnstock/issues"
 
 [tool.setuptools]
 include-package-data = true
