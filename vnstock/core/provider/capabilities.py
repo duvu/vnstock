@@ -212,11 +212,13 @@ _TCBS_OHLCV_EQUITY = ProviderCapability(
     intervals=["1m", "5m", "15m", "30m", "1H", "1D", "1W", "1M"],
     supports_history=True,
     supports_intraday=True,
+    requires_auth=True,
     is_live_testable=True,
     notes=(
         "TCBS bars-long-term OHLCV. Endpoint fallback order: "
         "/stock/v2/stock/bars-long-term → /stock-insight/v2 → /stock-insight/v1. "
-        "Unofficial public endpoint."
+        "Requires Bearer token — run `vnstock-tcbs-login`. "
+        "Unofficial endpoint — may drift without notice."
     ),
 )
 
@@ -228,8 +230,9 @@ _TCBS_PRICE_BOARD_EQUITY = ProviderCapability(
     intervals=[],
     supports_live_snapshot=True,
     supports_batch=True,
+    requires_auth=True,
     is_live_testable=True,
-    notes="TCBS /stock/v1/stock/second-tc-price price board. Unofficial public endpoint.",
+    notes="TCBS /stock/v1/stock/second-tc-price price board. Requires Bearer token.",
 )
 
 _TCBS_INTRADAY_EQUITY = ProviderCapability(
@@ -239,8 +242,9 @@ _TCBS_INTRADAY_EQUITY = ProviderCapability(
     method="intraday",
     intervals=[],
     supports_intraday=True,
+    requires_auth=True,
     is_live_testable=True,
-    notes="TCBS /stock/v1/intraday/{symbol}/his/paging. Experimental; unofficial endpoint.",
+    notes="TCBS /stock/v1/intraday/{symbol}/his/paging. Experimental; requires Bearer token.",
 )
 
 _TCBS_COMPANY_OVERVIEW = ProviderCapability(
@@ -250,8 +254,9 @@ _TCBS_COMPANY_OVERVIEW = ProviderCapability(
     method="overview",
     intervals=[],
     supports_history=False,
+    requires_auth=True,
     is_live_testable=True,
-    notes="TCBS company overview via tcanalysis endpoints. Unofficial public endpoint.",
+    notes="TCBS company overview via tcanalysis endpoints. Requires Bearer token.",
 )
 
 _TCBS_FINANCIAL_STATEMENTS = ProviderCapability(
@@ -261,11 +266,12 @@ _TCBS_FINANCIAL_STATEMENTS = ProviderCapability(
     method="balance_sheet",
     intervals=[],
     supports_history=True,
+    requires_auth=True,
     is_live_testable=True,
     notes=(
         "TCBS /stock-insight/v1/finance/{symbol}/{report_type}. "
         "Supports balance-sheet, income-statement, cash-flow, financialratio. "
-        "Unofficial public endpoint."
+        "Requires Bearer token."
     ),
 )
 
@@ -275,10 +281,11 @@ _TCBS_SCREENER = ProviderCapability(
     asset_class="equity",
     method="scan",
     intervals=[],
+    requires_auth=True,
     is_live_testable=False,
     notes=(
         "TCBS /ligo/v1/watchlist/preview screener. EXPERIMENTAL — unofficial POST endpoint. "
-        "Vendor signal fields are raw data, not investment advice."
+        "Requires Bearer token. Vendor signal fields are raw data, not investment advice."
     ),
 )
 

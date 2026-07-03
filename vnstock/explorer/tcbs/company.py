@@ -19,6 +19,7 @@ from vnstock.core.registry import ProviderRegistry  # noqa: F401
 from vnstock.core.utils.client import ProxyConfig, send_request
 from vnstock.core.utils.logger import get_logger
 from vnstock.core.utils.user_agent import get_headers
+from vnstock.explorer.tcbs.auth import TCBSAuth
 from vnstock.explorer.tcbs.const import (
     _COMPANY_ACTIVITY_NEWS_URL,
     _COMPANY_DIVIDENDS_URL,
@@ -70,6 +71,7 @@ class Company:
     def __init__(
         self,
         symbol: str = None,
+        token: Optional[str] = None,
         random_agent: bool = False,
         to_df: Optional[bool] = True,
         show_log: Optional[bool] = False,
@@ -82,6 +84,8 @@ class Company:
 
         Args:
             symbol: Mã chứng khoán (VD: 'FPT', 'VCB').
+            token: Bearer token TCBS. Nếu None, tự động tải từ
+                   TCBS_BEARER_TOKEN env var hoặc ~/.config/vnstock/tcbs_token.json.
             random_agent: Sử dụng user agent ngẫu nhiên. Mặc định False.
             to_df: Trả về DataFrame. Mặc định True.
             show_log: Hiển thị log debug. Mặc định False.
@@ -91,9 +95,18 @@ class Company:
         """
         self.symbol = symbol.upper() if symbol else ""
         self.data_source = "TCBS"
+
+        _token = token or TCBSAuth.load_token()
         self.headers = get_headers(
             data_source=self.data_source, random_agent=random_agent
         )
+        if _token:
+            self.headers["Authorization"] = f"Bearer {_token}"
+        else:
+            logger.warning(
+                "Không tìm thấy TCBS token. Chạy `vnstock-tcbs-login` để đăng nhập."
+            )
+
         self.show_log = show_log
         self.to_df = to_df
 
