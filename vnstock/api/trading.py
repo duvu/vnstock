@@ -43,10 +43,10 @@ class Trading(BaseAdapter):
         self.random_agent = random_agent
         self.show_log = show_log
 
-        # Validate to accept vci, kbs, dnse as source
-        if source.lower() not in ["kbs", "vci", "dnse"]:
+        # Validate to accept vci, kbs, dnse, tcbs as source
+        if source.lower() not in ["kbs", "vci", "dnse", "tcbs"]:
             raise ValueError(
-                "Lớp Trading chỉ nhận giá trị tham số source là 'VCI', 'KBS' hoặc 'DNSE'."
+                "Lớp Trading chỉ nhận giá trị tham số source là 'VCI', 'KBS', 'DNSE' hoặc 'TCBS'."
             )
 
         super().__init__(

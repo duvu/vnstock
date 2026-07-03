@@ -17,6 +17,7 @@ class TestCapabilitiesRegistry:
         assert "MSN" in providers
         assert "FMP" in providers
         assert "FMARKET" in providers
+        assert "TCBS" in providers
 
 
 class TestQueryCapabilities:
@@ -59,8 +60,8 @@ class TestQueryCapabilities:
         caps = query_capabilities(dataset_type="ohlcv", asset_class="equity")
         assert len(caps) > 0
         providers = {c.provider for c in caps}
-        # KBS, VCI, DNSE all support equity OHLCV
-        assert providers >= {"KBS", "VCI", "DNSE"}
+        # KBS, VCI, DNSE, TCBS all support equity OHLCV
+        assert providers >= {"KBS", "VCI", "DNSE", "TCBS"}
 
     def test_combined_query_provider_and_dataset(self):
         caps = query_capabilities(provider="DNSE", dataset_type="price_board")
@@ -106,9 +107,19 @@ class TestQueryCapabilities:
         caps = query_capabilities(dataset_type="price_board")
         assert all(c.supports_batch for c in caps)
 
-    @pytest.mark.parametrize("provider", ["KBS", "VCI", "DNSE"])
+    @pytest.mark.parametrize("provider", ["KBS", "VCI", "DNSE", "TCBS"])
     def test_major_providers_have_ohlcv_equity(self, provider: str):
         caps = query_capabilities(
             provider=provider, dataset_type="ohlcv", asset_class="equity"
         )
         assert len(caps) >= 1, f"{provider} should have ohlcv/equity capability"
+
+    def test_tcbs_ohlcv_no_auth(self):
+        caps = query_capabilities(provider="TCBS", dataset_type="ohlcv")
+        assert len(caps) >= 1
+        assert all(not c.requires_auth for c in caps)
+
+    def test_tcbs_screener_is_experimental(self):
+        caps = query_capabilities(provider="TCBS", dataset_type="screener")
+        assert len(caps) >= 1
+        assert all("experimental" in (c.notes or "").lower() for c in caps)

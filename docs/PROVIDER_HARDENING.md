@@ -38,6 +38,7 @@ Provider capabilities currently cover the implemented data-source surface:
 | KBS | Vietnam equity/index OHLCV, price board, intraday, reference/fundamental APIs |
 | VCI | Vietnam equity/index OHLCV, price board, intraday, industry/index data |
 | DNSE | Vietnam equity OHLCV and price board; intraday is treated as auth/availability constrained |
+| TCBS | Vietnam equity OHLCV, price board, company reference, financial statements, symbol industry, screener (experimental); unofficial public endpoints — may drift |
 | MSN | Global/search and selected global OHLCV use cases |
 | FMP | Auth-gated global OHLCV via FMP API key |
 | FMARKET | Fund NAV and fund data |
