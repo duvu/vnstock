@@ -2,117 +2,117 @@
 
 ## 1. Dataset contracts
 
-- [ ] Create `vnstock/core/contracts/`.
-- [ ] Add `DatasetContract` model.
-- [ ] Add `DatasetContractRegistry`.
-- [ ] Define `equity.ohlcv` contract.
-- [ ] Define `equity.quote` contract.
-- [ ] Define `equity.intraday_trades` contract.
-- [ ] Define `index.ohlcv` contract.
-- [ ] Define `reference.symbols` contract.
-- [ ] Define `reference.company_info` contract.
-- [ ] Define `fundamental.balance_sheet` contract.
-- [ ] Define `fundamental.income_statement` contract.
-- [ ] Define `fundamental.cash_flow` contract.
-- [ ] Define `fundamental.financial_ratio` contract.
-- [ ] Define `fund.nav` contract.
-- [ ] Define `foreign_flow.daily` contract.
-- [ ] Add tests for contract registration.
-- [ ] Add tests for duplicate dataset registration.
-- [ ] Add tests for unknown dataset lookup.
+- [x] Create `vnstock/core/contracts/`.
+- [x] Add `DatasetContract` model.
+- [x] Add `DatasetContractRegistry`.
+- [x] Define `equity.ohlcv` contract.
+- [x] Define `equity.quote` contract.
+- [x] Define `equity.intraday_trades` contract.
+- [x] Define `index.ohlcv` contract.
+- [x] Define `reference.symbols` contract.
+- [x] Define `reference.company_info` contract.
+- [x] Define `fundamental.balance_sheet` contract.
+- [x] Define `fundamental.income_statement` contract.
+- [x] Define `fundamental.cash_flow` contract.
+- [x] Define `fundamental.financial_ratio` contract.
+- [x] Define `fund.nav` contract.
+- [x] Define `foreign_flow.daily` contract.
+- [x] Add tests for contract registration.
+- [x] Add tests for duplicate dataset registration.
+- [x] Add tests for unknown dataset lookup.
 
 ## 2. Provider plugin interface
 
-- [ ] Create `vnstock/core/provider/plugin.py`.
-- [ ] Define `ProviderPlugin` protocol/interface.
-- [ ] Define standard capability metadata shape.
-- [ ] Define allowed provider capability status values:
+- [x] Create `vnstock/core/provider/plugin.py`.
+- [x] Define `ProviderPlugin` protocol/interface.
+- [x] Define standard capability metadata shape.
+- [x] Define allowed provider capability status values:
   - `stable`
   - `experimental`
   - `partial`
   - `deprecated`
   - `unsupported`
-- [ ] Add tests for provider capability shape.
-- [ ] Add a fake provider plugin for tests.
+- [x] Add tests for provider capability shape.
+- [x] Add a fake provider plugin for tests.
 
 ## 3. Provider registry
 
-- [ ] Create `vnstock/core/provider/registry.py`.
-- [ ] Implement `register(provider)`.
-- [ ] Implement `get(name)`.
-- [ ] Implement `providers_for(dataset)`.
-- [ ] Implement `names()`.
-- [ ] Implement `capability_matrix()`.
-- [ ] Ensure provider names are case-insensitive.
-- [ ] Add duplicate provider registration error.
-- [ ] Add tests for registry lookup.
-- [ ] Add tests for dataset candidate lookup.
-- [ ] Add tests for capability matrix output.
+- [x] Create `vnstock/core/provider/registry.py`.
+- [x] Implement `register(provider)`.
+- [x] Implement `get(name)`.
+- [x] Implement `providers_for(dataset)`.
+- [x] Implement `names()`.
+- [x] Implement `capability_matrix()`.
+- [x] Ensure provider names are case-insensitive.
+- [x] Add duplicate provider registration error.
+- [x] Add tests for registry lookup.
+- [x] Add tests for dataset candidate lookup.
+- [x] Add tests for capability matrix output.
 
 ## 4. Provider router skeleton
 
-- [ ] Create `vnstock/core/provider/router.py`.
-- [ ] Implement `ProviderRouter`.
-- [ ] Implement explicit source resolution.
-- [ ] Implement `source=None` and `source="auto"` behavior.
-- [ ] Add default provider priority config hook.
-- [ ] Add routing diagnostics object.
-- [ ] Add error for unknown provider.
-- [ ] Add error for provider that does not support requested dataset.
-- [ ] Add tests for explicit source routing.
-- [ ] Add tests for auto source routing.
-- [ ] Add tests for unsupported dataset routing.
-- [ ] Add tests for routing diagnostics.
+- [x] Create `vnstock/core/provider/router.py`.
+- [x] Implement `ProviderRouter`.
+- [x] Implement explicit source resolution.
+- [x] Implement `source=None` and `source="auto"` behavior.
+- [x] Add default provider priority config hook.
+- [x] Add routing diagnostics object.
+- [x] Add error for unknown provider.
+- [x] Add error for provider that does not support requested dataset.
+- [x] Add tests for explicit source routing.
+- [x] Add tests for auto source routing.
+- [x] Add tests for unsupported dataset routing.
+- [x] Add tests for routing diagnostics.
 
 ## 5. DataResult
 
-- [ ] Create `vnstock/core/result.py`.
-- [ ] Add `DataResult` dataclass.
-- [ ] Add `to_dataframe()` method.
-- [ ] Ensure metadata is attached to `DataFrame.attrs`.
-- [ ] Ensure no auth secrets are added to metadata.
-- [ ] Add tests for metadata propagation.
-- [ ] Add tests for empty quality report.
-- [ ] Add tests for diagnostics propagation.
+- [x] Create `vnstock/core/result.py`.
+- [x] Add `DataResult` dataclass.
+- [x] Add `to_dataframe()` method.
+- [x] Ensure metadata is attached to `DataFrame.attrs`.
+- [x] Ensure no auth secrets are added to metadata.
+- [x] Add tests for metadata propagation.
+- [x] Add tests for empty quality report.
+- [x] Add tests for diagnostics propagation.
 
 ## 6. Error model
 
-- [ ] Add base platform exception.
-- [ ] Add `DatasetContractError`.
-- [ ] Add `ProviderNotFoundError`.
-- [ ] Add `UnsupportedDatasetError`.
-- [ ] Add `UnsupportedDatasetForProviderError`.
-- [ ] Add `ProviderFetchError`.
-- [ ] Add tests for expected errors.
+- [x] Add base platform exception.
+- [x] Add `DatasetContractError`.
+- [x] Add `ProviderNotFoundError`.
+- [x] Add `UnsupportedDatasetError`.
+- [x] Add `UnsupportedDatasetForProviderError`.
+- [x] Add `ProviderFetchError`.
+- [x] Add tests for expected errors.
 
 ## 7. Backward compatibility
 
-- [ ] Confirm current `Market` import remains unchanged.
-- [ ] Confirm `Market().equity.ohlcv(...)` remains unchanged.
-- [ ] Confirm `validate=True` behavior remains compatible.
-- [ ] Confirm `df.attrs["quality"]` remains compatible.
-- [ ] Add at least one compatibility test for existing OHLCV call path.
-- [ ] Add migration notes for internal maintainers.
+- [x] Confirm current `Market` import remains unchanged.
+- [x] Confirm `Market().equity.ohlcv(...)` remains unchanged.
+- [x] Confirm `validate=True` behavior remains compatible.
+- [x] Confirm `df.attrs["quality"]` remains compatible.
+- [x] Add at least one compatibility test for existing OHLCV call path.
+- [x] Add migration notes for internal maintainers.
 
 ## 8. First provider path adaptation
 
-- [ ] Select first provider path for internal plugin routing.
-- [ ] Recommended: `equity.ohlcv`.
-- [ ] Add internal provider wrapper for selected provider.
-- [ ] Route selected path through `ProviderRegistry`.
-- [ ] Route selected path through `ProviderRouter`.
-- [ ] Return current public `DataFrame`.
-- [ ] Preserve provider/quality metadata.
-- [ ] Add tests.
+- [x] Select first provider path for internal plugin routing.
+- [x] Recommended: `equity.ohlcv`.
+- [x] Add internal provider wrapper for selected provider.
+- [x] Route selected path through `ProviderRegistry`.
+- [x] Route selected path through `ProviderRouter`.
+- [x] Return current public `DataFrame`.
+- [x] Preserve provider/quality metadata.
+- [x] Add tests.
 
 ## 9. Documentation
 
-- [ ] Add `docs/PLUGIN_ARCHITECTURE.md`.
-- [ ] Add `docs/DATASET_CONTRACTS.md`.
-- [ ] Add `docs/PROVIDER_PLUGIN_INTERFACE.md`.
-- [ ] Add examples for provider capability declaration.
-- [ ] Add examples for `DataResult`.
-- [ ] Add note that external package split is not part of Phase 1.
+- [x] Add `docs/PLUGIN_ARCHITECTURE.md`.
+- [x] Add `docs/DATASET_CONTRACTS.md`.
+- [x] Add `docs/PROVIDER_PLUGIN_INTERFACE.md`.
+- [x] Add examples for provider capability declaration.
+- [x] Add examples for `DataResult`.
+- [x] Add note that external package split is not part of Phase 1.
 
 ## 10. Validation
 
@@ -129,14 +129,14 @@ python -m build --sdist --wheel --no-isolation
 
 Phase 1 is complete when:
 
-- [ ] dataset contract registry exists;
-- [ ] provider plugin interface exists;
-- [ ] provider registry exists;
-- [ ] provider router skeleton exists;
-- [ ] `DataResult` exists;
-- [ ] at least one provider path is adapted internally;
-- [ ] public API remains backward-compatible;
-- [ ] unit tests pass;
-- [ ] contract tests pass;
-- [ ] build passes;
-- [ ] docs are updated.
+- [x] dataset contract registry exists;
+- [x] provider plugin interface exists;
+- [x] provider registry exists;
+- [x] provider router skeleton exists;
+- [x] `DataResult` exists;
+- [x] at least one provider path is adapted internally;
+- [x] public API remains backward-compatible;
+- [x] unit tests pass;
+- [x] contract tests pass;
+- [x] build passes;
+- [x] docs are updated.
