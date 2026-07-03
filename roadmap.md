@@ -584,6 +584,24 @@ Broker/account/order endpoints remain out of scope.
 
 ---
 
+# Phase 3.5 and Phase 4 — Closure status
+
+**Phase 3.5** is closed. Service data endpoints no longer bypass `PluginRuntime`.
+All supported data endpoints route through `PluginRuntime.fetch(..., return_result=True)`.
+Tests fail if the runtime is bypassed.
+
+**Phase 4** is closed. The `vnstock-serve` local data service:
+
+- exposes canonical `/v1/<domain>/<dataset>` read-only endpoints
+- routes all data fetches through `PluginRuntime`
+- returns a stable `data` / `meta` / `diagnostics` response envelope
+- uses the plugin registry for provider metadata endpoints
+- exposes safe auth status without credential material
+- keeps REST login/logout, broker, account, portfolio, trading, and order endpoints permanently forbidden
+- supports localhost-only deployment via Docker
+
+---
+
 # Phase 5 — Rate limiter, retry, and batch result envelope
 
 ## Goal
@@ -817,12 +835,23 @@ GET /v1/ingestion/runs/{run_id}/errors
 
 ## 7.4. Auth endpoints
 
+The service exposes safe auth status only. REST login/logout are explicitly out of scope.
+
 ```text
 GET /v1/auth/providers
-POST /v1/auth/{provider}/login
-POST /v1/auth/{provider}/logout
+GET /v1/auth/status
 GET /v1/auth/{provider}/status
 ```
+
+The following endpoints MUST NOT exist in the data service:
+
+```text
+POST /v1/auth/{provider}/login   — out of scope; use CLI: vnstock auth login
+POST /v1/auth/{provider}/logout  — out of scope; use CLI: vnstock auth logout
+```
+
+Authentication credentials are managed through `vnstock-auth` CLI commands,
+not through REST endpoints. The local data service is data-read only.
 
 ## 7.5. Response envelope
 

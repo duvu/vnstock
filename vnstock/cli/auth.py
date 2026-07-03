@@ -162,21 +162,14 @@ def cmd_status(provider: Optional[str] = None) -> int:
         status = manager.auth_status(provider)
         _print_provider_status(provider, status)
     else:
-        # Show status for known providers
-        known_providers = ["tcbs", "fmp"]
-        all_status = manager.auth_status_all()
-
         _print("Auth status:")
         _print("-" * 40)
 
-        for p in known_providers:
-            s = all_status.get(p, {"authenticated": False, "provider": p})
-            _print_provider_status(p, s)
-
-        # Show any extra providers that have credentials
-        extra = {k: v for k, v in all_status.items() if k not in known_providers}
-        for p, s in extra.items():
-            _print_provider_status(p, s)
+        # auth_status_all() returns list[dict]
+        all_status_list = manager.auth_status_all()
+        for entry in all_status_list:
+            p = entry.get("provider", "unknown")
+            _print_provider_status(p, entry)
 
     return 0
 
