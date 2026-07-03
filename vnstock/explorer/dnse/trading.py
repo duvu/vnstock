@@ -91,22 +91,30 @@ class Trading:
 
         params = {"symbols": symbols_param}
 
-        json_data = send_request(
-            url=_PRICE_BOARD_URL,
-            headers=self.headers,
-            method="GET",
-            params=params,
-            show_log=show_log or self.show_log,
-            proxy_list=self.proxy_config.proxy_list,
-            proxy_mode=self.proxy_config.proxy_mode,
-            request_mode=self.proxy_config.request_mode,
-        )
+        try:
+            json_data = send_request(
+                url=_PRICE_BOARD_URL,
+                headers=self.headers,
+                method="GET",
+                params=params,
+                show_log=show_log or self.show_log,
+                proxy_list=self.proxy_config.proxy_list,
+                proxy_mode=self.proxy_config.proxy_mode,
+                request_mode=self.proxy_config.request_mode,
+            )
+        except Exception:
+            raise ValueError(
+                "DNSE price_board không khả dụng: endpoint /chart-api/v2/quotes "
+                "hiện trả về lỗi 500. Vui lòng sử dụng nhà cung cấp khác (KBS/VCI) "
+                "để lấy bảng giá realtime."
+            ) from None
 
         if not json_data:
-            df = pd.DataFrame()
-            df.attrs["symbols"] = symbols_list
-            df.attrs["source"] = self.data_source
-            return df
+            raise ValueError(
+                "DNSE price_board không khả dụng: endpoint /chart-api/v2/quotes "
+                "hiện trả về lỗi 500. Vui lòng sử dụng nhà cung cấp khác (KBS/VCI) "
+                "để lấy bảng giá realtime."
+            )
 
         # json_data may be a dict with "data" key, or a list of dicts
         if isinstance(json_data, dict) and "data" in json_data:

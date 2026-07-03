@@ -17,7 +17,6 @@ from vnstock.core.utils.user_agent import get_headers
 from vnstock.explorer.dnse.const import (
     _INTERVAL_MAP,
     _INTRADAY_CORE_COLUMNS,
-    _INTRADAY_MAP,
     _INTRADAY_URL,
     _OHLC_DTYPE,
     _OHLC_MAP,
@@ -185,6 +184,14 @@ class Quote:
         # DNSE returns {"t": [...], "o": [...], "h": [...], "l": [...], "c": [...], "v": [...]}
         # or a list of dicts — handle both shapes
         if isinstance(json_data, dict) and "t" in json_data:
+            # DNSE returns null arrays for IPs outside Vietnam (geographic restriction).
+            # {"t": null, "o": null, ...} means no data is available from this IP.
+            if json_data.get("t") is None:
+                raise ValueError(
+                    f"DNSE trả về dữ liệu rỗng cho mã {self.symbol}. "
+                    "API DNSE chỉ hoạt động từ địa chỉ IP tại Việt Nam. "
+                    "Vui lòng sử dụng proxy tại Việt Nam hoặc chuyển sang nhà cung cấp khác (KBS/VCI)."
+                )
             # Array-of-arrays format
             length_data = len(json_data["t"])
             records = []
@@ -276,19 +283,23 @@ class Quote:
         get_all: Optional[bool] = False,
     ) -> Union[pd.DataFrame, str]:
         """
-        Tải dữ liệu khớp lệnh intraday từ DNSE cho một ngày giao dịch.
+        Tải dữ liệu OHLCV 1 phút (intraday) từ DNSE cho một ngày giao dịch.
+
+        Sử dụng endpoint /chart-api/v2/ohlcs/stock?resolution=1. Dữ liệu trả về
+        là các nến 1 phút (không phải tick từng lệnh khớp). Chỉ hoạt động từ
+        địa chỉ IP tại Việt Nam do hạn chế địa lý của DNSE.
 
         Args:
             date: Ngày giao dịch (YYYY-MM-DD). Mặc định hôm nay.
             to_df: Trả về DataFrame. Mặc định True.
             show_log: Hiển thị log debug.
-            get_all: Lấy thêm các cột mở rộng. Mặc định False.
+            get_all: Giữ tất cả cột OHLCV thay vì chỉ time/price/volume. Mặc định False.
 
         Returns:
-            DataFrame với cột [time, price, volume, match_type, id].
+            DataFrame với cột [time, price, volume] hoặc đầy đủ OHLCV khi get_all=True.
 
         Raises:
-            ValueError: Nếu date là ngày tương lai.
+            ValueError: Nếu date là ngày tương lai hoặc API trả về null (hạn chế IP).
         """
         if date is None:
             date = datetime.now().strftime("%Y-%m-%d")
@@ -305,9 +316,15 @@ class Quote:
                 f"Không thể lấy dữ liệu intraday cho ngày tương lai: {date}."
             )
 
+        # Build from/to timestamps covering the full trading day (0:00 – 23:59 UTC)
+        from_ts = int(date_dt.replace(tzinfo=timezone.utc).timestamp())
+        to_ts = from_ts + 86399  # 23:59:59 same day
+
         params = {
+            "resolution": "1",
             "symbol": self.symbol,
-            "date": date,
+            "from": from_ts,
+            "to": to_ts,
         }
 
         json_data = send_request(
@@ -326,68 +343,73 @@ class Quote:
                 return pd.DataFrame(columns=_INTRADAY_CORE_COLUMNS)
             return "[]"
 
-        # json_data may be a list of dicts or a dict with a "data" key
-        if isinstance(json_data, dict) and "data" in json_data:
-            records = json_data["data"]
-        elif isinstance(json_data, list):
-            records = json_data
-        else:
-            records = []
-
-        if not records:
+        # DNSE chart API returns array-of-arrays: {"t": [...], "o": [...], ...}
+        if not (isinstance(json_data, dict) and "t" in json_data):
             if to_df:
                 return pd.DataFrame(columns=_INTRADAY_CORE_COLUMNS)
             return "[]"
 
-        if not to_df:
-            import json
+        # Geographic restriction: API returns null arrays for non-Vietnamese IPs
+        if json_data.get("t") is None:
+            raise ValueError(
+                f"DNSE trả về dữ liệu rỗng cho mã {self.symbol} (ngày {date}). "
+                "API DNSE chỉ hoạt động từ địa chỉ IP tại Việt Nam. "
+                "Vui lòng sử dụng proxy tại Việt Nam hoặc chuyển sang nhà cung cấp khác (KBS/VCI)."
+            )
 
-            return json.dumps(records)
+        t_list = json_data["t"]
+        if not t_list:
+            if to_df:
+                return pd.DataFrame(columns=_INTRADAY_CORE_COLUMNS)
+            return "[]"
+
+        length_data = len(t_list)
+        records = []
+        for i in range(length_data):
+            records.append(
+                {
+                    "time": t_list[i],
+                    "open": json_data.get("o", [None] * length_data)[i],
+                    "high": json_data.get("h", [None] * length_data)[i],
+                    "low": json_data.get("l", [None] * length_data)[i],
+                    "close": json_data.get("c", [None] * length_data)[i],
+                    "volume": json_data.get("v", [0] * length_data)[i],
+                }
+            )
 
         df = pd.DataFrame(records)
 
-        # Rename columns via _INTRADAY_MAP
-        df = df.rename(columns=_INTRADAY_MAP)
+        # Convert Unix timestamp to datetime
+        df["time"] = (
+            pd.to_datetime(df["time"], unit="s", utc=True)
+            .dt.tz_convert("Asia/Ho_Chi_Minh")
+            .dt.tz_localize(None)
+        )
 
-        # Normalize match_type: map raw 'B'/'S' values to 'buy'/'sell'
-        if "match_type" in df.columns:
-            df["match_type"] = (
-                df["match_type"]
-                .fillna("")
-                .astype(str)
-                .str.upper()
-                .map({"B": "buy", "S": "sell"})
-                .fillna("unknown")
-            )
+        # Use close as price for compatibility with tick-based intraday schema
+        df["price"] = df["close"]
 
-        # Ensure id column exists
-        if "id" not in df.columns:
-            # Synthesize id from time+price+volume (same pattern as KBS)
-            time_col = df.get("time", pd.Series(range(len(df))))
-            price_col = df.get("price", pd.Series([0.0] * len(df)))
-            vol_col = df.get("volume", pd.Series([0] * len(df)))
-            df["id"] = (
-                time_col.astype(str).str.replace(" ", "_").str.replace(":", "")
-                + "_"
-                + price_col.astype(str).str.replace(".", "")
-                + "_"
-                + vol_col.astype(str)
-            )
+        if not to_df:
+            import json as _json
+
+            return _json.dumps(df.to_dict(orient="records"), default=str)
 
         if get_all:
             result_df = df
         else:
-            existing_core = [c for c in _INTRADAY_CORE_COLUMNS if c in df.columns]
-            result_df = df[existing_core]
+            # Minimal columns: time, price, volume
+            core_cols = [c for c in ["time", "price", "volume"] if c in df.columns]
+            result_df = df[core_cols]
 
         # Metadata
         result_df.attrs["symbol"] = self.symbol
         result_df.attrs["source"] = self.data_source
         result_df.attrs["date"] = date
+        result_df.attrs["resolution"] = "1m"
 
         if show_log or self.show_log:
             logger.info(
-                f"Truy xuất thành công {len(result_df)} bản ghi intraday cho {self.symbol} ({date})."
+                f"Truy xuất thành công {len(result_df)} nến 1 phút cho {self.symbol} ({date})."
             )
 
         return result_df
