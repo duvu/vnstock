@@ -7,7 +7,7 @@ provided via the 'token' param or via TCBS_BEARER_TOKEN env var / token file.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
@@ -17,6 +17,9 @@ from vnstock.core.provider.exceptions import (
 )
 from vnstock.providers.tcbs.capabilities import TCBS_CAPABILITIES, TCBS_LIMITATIONS
 from vnstock.providers.tcbs.normalize import normalize_equity_ohlcv
+
+if TYPE_CHECKING:
+    from vnstock.core.auth.spec import AuthSpec
 
 _SUPPORTED_DATASETS = frozenset(
     d for d, cap in TCBS_CAPABILITIES.items() if cap.get("supported")
@@ -55,6 +58,27 @@ class TCBSProviderPlugin:
             "supported_datasets": sorted(_SUPPORTED_DATASETS),
             "limitations": TCBS_LIMITATIONS,
         }
+
+    def auth_spec(self, dataset: str) -> "AuthSpec":
+        """TCBS requires interactive login; experimental and explicit-only.
+
+        TCBS authenticated mode is experimental and only used when the caller
+        explicitly selects ``source="TCBS"`` with an auth policy that allows it.
+        """
+        from vnstock.core.auth.spec import AuthSpec
+
+        return AuthSpec.tcbs_experimental(
+            scopes=(
+                "equity.ohlcv",
+                "equity.quote",
+                "equity.intraday_trades",
+                "reference.company_info",
+                "fundamental.balance_sheet",
+                "fundamental.income_statement",
+                "fundamental.cash_flow",
+                "fundamental.financial_ratio",
+            )
+        )
 
     @property
     def _dataset_handlers(self) -> dict[str, Any]:

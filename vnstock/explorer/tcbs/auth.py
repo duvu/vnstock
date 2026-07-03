@@ -79,7 +79,9 @@ class TCBSAuth:
 
         Priority:
         1. ``TCBS_BEARER_TOKEN`` environment variable
-        2. Token file at *token_path* (default ``~/.config/vnstock/tcbs_token.json``)
+        2. ``LocalFileCredentialStore`` at ``~/.config/vnstock/credentials/tcbs.json``
+           (new AuthManager-compatible path)
+        3. Legacy token file at *token_path* (default ``~/.config/vnstock/tcbs_token.json``)
 
         Returns the token string, or ``None`` if not available.
         """
@@ -87,6 +89,20 @@ class TCBSAuth:
         if env_token:
             return env_token.strip()
 
+        # ── New: check CredentialStore path (AuthManager-compatible) ─────
+        try:
+            from vnstock.core.auth.credential_store import LocalFileCredentialStore
+
+            store = LocalFileCredentialStore()
+            creds = store.read("tcbs")
+            if creds and isinstance(creds, dict):
+                token = creds.get("token")
+                if token:
+                    return str(token)
+        except Exception:
+            pass  # fall through to legacy path
+
+        # ── Legacy: ~/.config/vnstock/tcbs_token.json ─────────────────────
         path = token_path or _DEFAULT_TOKEN_PATH
         if not path.exists():
             return None

@@ -9,6 +9,7 @@ should conform to. It exposes:
 - dataset fetch
 - parameter validation
 - diagnostics
+- auth spec (Phase 4)
 
 Allowed capability status values:
 
@@ -44,13 +45,20 @@ Usage::
 
         def diagnostics(self) -> dict:
             ...
+
+        def auth_spec(self, dataset: str) -> "AuthSpec":
+            from vnstock.core.auth.spec import AuthSpec
+            return AuthSpec.no_auth()
 """
 
 from __future__ import annotations
 
-from typing import Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 import pandas as pd
+
+if TYPE_CHECKING:
+    from vnstock.core.auth.spec import AuthSpec
 
 #: Allowed capability status values for provider dataset capabilities.
 CAPABILITY_STATUSES: frozenset[str] = frozenset(
@@ -133,5 +141,20 @@ class ProviderPlugin(Protocol):
 
         Returns:
             Dict with provider-specific health information.
+        """
+        ...
+
+    def auth_spec(self, dataset: str) -> "AuthSpec":
+        """Return the auth requirements for *dataset*.
+
+        All providers must implement this method. Public providers should
+        return ``AuthSpec.no_auth()``. Providers requiring authentication
+        should return an appropriate ``AuthSpec``.
+
+        Args:
+            dataset: Dotted dataset name, e.g. ``"equity.ohlcv"``.
+
+        Returns:
+            :class:`~vnstock.core.auth.spec.AuthSpec` describing auth requirements.
         """
         ...
