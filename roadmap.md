@@ -82,6 +82,10 @@ The next priority is to formalize these capabilities into stable platform contra
 
 # Phase 1 — Core contracts and internal plugin foundation
 
+**Phase 1 is closed.** `ProviderPlugin` protocol, `PluginRegistry`, `DataResult`,
+and `CONTRACT_REGISTRY` (twelve datasets) are implemented and regression-tested.
+See `docs/PLUGIN_ARCHITECTURE_STATUS.md` for the full closure record.
+
 ## Goal
 
 Create the internal plugin architecture inside the monorepo first. Do not split external packages yet.
@@ -254,6 +258,11 @@ python -m build --sdist --wheel --no-isolation
 
 # Phase 2 — Normalize existing providers as internal plugins
 
+**Phase 2 is closed.** All seven built-in providers (KBS, VCI, DNSE, TCBS,
+FMARKET, MSN, FMP) satisfy `ProviderPlugin`, are registered through
+`default_plugin_registry()`, and pass provider conformance tests.
+See `docs/PLUGIN_ARCHITECTURE_STATUS.md` for the full closure record.
+
 ## Goal
 
 Move KBS, VCI, DNSE, TCBS, MSN, FMP, and FMarket toward the same provider plugin interface.
@@ -359,6 +368,11 @@ Offline contract tests pass.
 ---
 
 # Phase 3 — Health-aware routing and diagnostics
+
+**Phase 3 is closed.** `PluginRouter` implements health-aware and auth-aware
+routing with tiered fallback, cooldown, explicit source overrides, and full
+`RoutingDecision` audit trail. See `docs/PLUGIN_ARCHITECTURE_STATUS.md` for
+the full closure record.
 
 ## Goal
 
