@@ -11,6 +11,7 @@ FORBIDDEN endpoints (must never exist):
   /v1/portfolio*
   /v1/transfer*
   /v1/margin*
+  /v1/trading*
 
 ALLOWED endpoint groups:
   GET /healthz
@@ -19,8 +20,10 @@ ALLOWED endpoint groups:
   GET /v1/providers/capabilities
   GET /v1/auth/status
   GET /v1/auth/providers
-  GET /v1/market/<dataset>?<params>
+  GET /v1/equity/<dataset>?<params>
+  GET /v1/index/<dataset>?<params>
   GET /v1/reference/<dataset>?<params>
+  GET /v1/company/<dataset>?<params>
   GET /v1/fundamental/<dataset>?<params>
   GET /v1/fund/<dataset>?<params>
 """
@@ -30,6 +33,7 @@ from __future__ import annotations
 import json
 import logging
 import threading
+import uuid
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Any
 from urllib.parse import parse_qs, urlparse
@@ -47,6 +51,19 @@ _FORBIDDEN_PREFIXES = (
     "/v1/portfolio",
     "/v1/transfer",
     "/v1/margin",
+    "/v1/trading",
+)
+
+# Canonical data endpoint prefixes handled via PluginRuntime
+_DATA_PREFIXES = (
+    "/v1/equity/",
+    "/v1/index/",
+    "/v1/reference/",
+    "/v1/company/",
+    "/v1/fundamental/",
+    "/v1/fund/",
+    # Deprecated aliases (still dispatched through runtime)
+    "/v1/market/",
 )
 
 
@@ -57,6 +74,12 @@ def _is_forbidden(path: str) -> bool:
         if p == prefix or p.startswith(prefix + "/"):
             return True
     return False
+
+
+def _is_data_endpoint(path: str) -> bool:
+    """Return True if path should be dispatched to PluginRuntime."""
+    p = path.lower()
+    return any(p.startswith(pfx) for pfx in _DATA_PREFIXES)
 
 
 # ---------------------------------------------------------------------------
@@ -102,14 +125,8 @@ class VnstockHandler(BaseHTTPRequestHandler):
             self._handle_auth_status()
         elif path == "/v1/auth/providers":
             self._handle_auth_providers()
-        elif path.startswith("/v1/market/"):
-            self._handle_data("market", path[len("/v1/market/") :], query)
-        elif path.startswith("/v1/reference/"):
-            self._handle_data("reference", path[len("/v1/reference/") :], query)
-        elif path.startswith("/v1/fundamental/"):
-            self._handle_data("fundamental", path[len("/v1/fundamental/") :], query)
-        elif path.startswith("/v1/fund/"):
-            self._handle_data("fund", path[len("/v1/fund/") :], query)
+        elif _is_data_endpoint(path):
+            self._handle_data(path, query)
         else:
             self._send_json(
                 404,
@@ -120,7 +137,7 @@ class VnstockHandler(BaseHTTPRequestHandler):
             )
 
     # ------------------------------------------------------------------ #
-    # Endpoint handlers                                                   #
+    # Non-data endpoint handlers                                          #
     # ------------------------------------------------------------------ #
 
     def _handle_healthz(self) -> None:
@@ -128,9 +145,10 @@ class VnstockHandler(BaseHTTPRequestHandler):
 
     def _handle_providers(self) -> None:
         try:
-            from vnstock.core.registry import ProviderRegistry
+            from vnstock.core.runtime import default_plugin_registry
 
-            providers = list(ProviderRegistry.list())
+            registry = default_plugin_registry()
+            providers = list(registry.names())
         except Exception:
             providers = []
         self._send_json(200, {"providers": providers})
@@ -154,15 +172,20 @@ class VnstockHandler(BaseHTTPRequestHandler):
     def _handle_providers_capabilities(self) -> None:
         """Return provider capabilities matrix (no auth material)."""
         try:
-            from vnstock.core.registry import ProviderRegistry
+            from vnstock.core.runtime import default_plugin_registry
 
+            registry = default_plugin_registry()
             caps: dict[str, Any] = {}
-            for name in ProviderRegistry.list():
-                try:
-                    plugin = ProviderRegistry.get(name)
-                    caps[name] = plugin.capabilities()
-                except Exception:
-                    caps[name] = {}
+            try:
+                caps = registry.capability_matrix()
+            except AttributeError:
+                # Fallback: iterate plugins manually
+                for name in registry.names():
+                    try:
+                        plugin = registry.get(name)
+                        caps[name] = plugin.capabilities()
+                    except Exception:
+                        caps[name] = {}
         except Exception:
             caps = {}
         self._send_json(200, {"capabilities": caps})
@@ -178,12 +201,23 @@ class VnstockHandler(BaseHTTPRequestHandler):
             status = self._auth_manager.auth_status_all()
             # Strip any token material before returning
             safe_status = {}
-            for provider, s in status.items():
-                safe_status[provider] = {
-                    "authenticated": s.get("authenticated", False),
-                    "provider": s.get("provider", provider),
-                    "source": s.get("source"),
-                }
+            if isinstance(status, list):
+                # Normalise list[dict] format returned by some implementations
+                for entry in status:
+                    if isinstance(entry, dict):
+                        provider = entry.get("provider", "unknown")
+                        safe_status[provider] = {
+                            "authenticated": entry.get("authenticated", False),
+                            "provider": provider,
+                            "source": entry.get("source"),
+                        }
+            elif isinstance(status, dict):
+                for provider, s in status.items():
+                    safe_status[provider] = {
+                        "authenticated": s.get("authenticated", False),
+                        "provider": s.get("provider", provider),
+                        "source": s.get("source"),
+                    }
         except Exception:
             safe_status = {}
         self._send_json(200, {"auth_status": safe_status})
@@ -210,74 +244,157 @@ class VnstockHandler(BaseHTTPRequestHandler):
             auth_info = {}
         self._send_json(200, {"auth_providers": auth_info})
 
-    def _handle_data(self, domain: str, dataset: str, query: dict) -> None:
-        """Generic data endpoint handler (data-read only)."""
-        if not dataset:
+    # ------------------------------------------------------------------ #
+    # Data endpoint handler — routed through PluginRuntime                #
+    # ------------------------------------------------------------------ #
+
+    def _handle_data(self, path: str, query: dict[str, list[str]]) -> None:
+        """Dispatch a data request through PluginRuntime.
+
+        All supported canonical paths (and deprecated aliases) are mapped to
+        a dataset name via :mod:`vnstock.service.dataset_mapper`, then fetched
+        via :func:`vnstock.service.runtime_dependency.get_runtime`.
+
+        Args:
+            path: Normalised URL path (already rstrip'd).
+            query: Parsed query-string dict from :func:`urllib.parse.parse_qs`.
+        """
+        from vnstock.core.provider.exceptions import (
+            DatasetContractError,
+            NoHealthyProviderError,
+            ProviderFetchError,
+            UnsupportedDatasetError,
+            VnstockPlatformError,
+        )
+        from vnstock.service.dataset_mapper import (
+            MapperError,
+            extract_runtime_params,
+            path_to_dataset,
+        )
+        from vnstock.service.runtime_dependency import get_runtime
+        from vnstock.service.serializers import RequestContext, serialize_data_result
+
+        request_id = f"req_{uuid.uuid4().hex[:12]}"
+
+        # 1. Map path → dataset
+        try:
+            dataset = path_to_dataset(path)
+        except MapperError:
             self._send_json(
-                400, {"error": "missing_dataset", "message": "Dataset required."}
+                404,
+                {
+                    "error": "unsupported_dataset",
+                    "message": f"No dataset available at '{path}'.",
+                    "request_id": request_id,
+                },
             )
             return
 
-        # Extract symbol from query params
-        symbol_list = query.get("symbol", query.get("symbols", []))
-        symbol = symbol_list[0] if symbol_list else None
+        # 2. Extract runtime control params and data params
+        runtime_params = extract_runtime_params(query)
+        source: str | None = runtime_params.get("source")
+        validate_str = runtime_params.get("validate", "false").lower()
+        validate = validate_str in ("1", "true", "yes")
+        quality_mode: str = runtime_params.get("quality_mode", "warn")
 
+        # 3. Build fetch params from remaining query keys
+        params: dict[str, Any] = {}
+        skip_keys = {"source", "validate", "quality_mode"}
+        for k, v_list in query.items():
+            if k not in skip_keys and v_list:
+                params[k] = v_list[0]
+
+        # 4. Fetch via PluginRuntime
         try:
-            import pandas as pd
-
-            from vnstock import Vnstock
-
-            if symbol:
-                vn = Vnstock(symbol=symbol, source="AUTO")
-            else:
-                vn = Vnstock(source="AUTO")
-
-            # Map domain/dataset to method calls
-            data_map = {
-                "market": {
-                    "ohlcv": lambda: vn.stock.quote.history(
-                        start=query.get("start", ["2024-01-01"])[0],
-                        end=query.get("end", ["2024-12-31"])[0],
-                        interval=query.get("interval", ["1D"])[0],
-                    ),
+            runtime = get_runtime()
+            result = runtime.fetch(
+                dataset,
+                params,
+                source=source,
+                validate=validate,
+                quality_mode=quality_mode,
+                return_result=True,
+            )
+        except UnsupportedDatasetError as exc:
+            self._send_json(
+                404,
+                {
+                    "error": "unsupported_dataset",
+                    "message": str(exc)[:300],
+                    "dataset": dataset,
+                    "request_id": request_id,
                 },
-                "reference": {
-                    "listing": lambda: vn.stock.listing.all_symbols(),
+            )
+            return
+        except NoHealthyProviderError as exc:
+            self._send_json(
+                503,
+                {
+                    "error": "no_healthy_provider",
+                    "message": str(exc)[:300],
+                    "dataset": dataset,
+                    "request_id": request_id,
                 },
-                "fundamental": {
-                    "balance_sheet": lambda: vn.stock.finance.balance_sheet(
-                        period=query.get("period", ["annual"])[0],
-                    ),
+            )
+            return
+        except ProviderFetchError as exc:
+            self._send_json(
+                502,
+                {
+                    "error": "provider_fetch_error",
+                    "message": str(exc)[:300],
+                    "dataset": dataset,
+                    "request_id": request_id,
                 },
-            }
-
-            domain_map = data_map.get(domain, {})
-            handler_fn = domain_map.get(dataset)
-            if handler_fn is None:
-                self._send_json(
-                    404,
-                    {
-                        "error": "not_found",
-                        "message": f"Dataset '{domain}/{dataset}' not found.",
-                    },
-                )
-                return
-
-            df = handler_fn()
-            if isinstance(df, pd.DataFrame):
-                records = df.to_dict(orient="records")
-            else:
-                records = []
-            self._send_json(200, {"data": records, "dataset": f"{domain}/{dataset}"})
-
+            )
+            return
+        except DatasetContractError as exc:
+            self._send_json(
+                422,
+                {
+                    "error": "contract_validation_failed",
+                    "message": str(exc)[:300],
+                    "dataset": dataset,
+                    "request_id": request_id,
+                },
+            )
+            return
+        except VnstockPlatformError as exc:
+            msg = str(exc)
+            # Bad params tend to mention "Invalid parameters"
+            status = (
+                400 if "Invalid parameters" in msg or "invalid" in msg.lower() else 500
+            )
+            self._send_json(
+                status,
+                {
+                    "error": "platform_error",
+                    "message": msg[:300],
+                    "dataset": dataset,
+                    "request_id": request_id,
+                },
+            )
+            return
         except Exception as exc:
             self._send_json(
                 500,
                 {
                     "error": "internal_error",
                     "message": str(exc)[:200],
+                    "dataset": dataset,
+                    "request_id": request_id,
                 },
             )
+            return
+
+        # 5. Serialize DataResult → envelope
+        ctx = RequestContext(
+            dataset=dataset,
+            source_requested=source,
+            request_id=request_id,
+        )
+        envelope = serialize_data_result(result, ctx)
+        self._send_json(200, envelope)
 
     # ------------------------------------------------------------------ #
     # Helpers                                                             #

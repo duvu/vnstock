@@ -1,32 +1,6 @@
-
 ============================================================
   Quote.history() — Daily OHLCV
-============================================================
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃                                                                                 ┃
-┃  ⚠️ THÔNG BÁO QUAN TRỌNG                                                        ┃
-┃                                                                                 ┃
-┃  Phát hành vnstock 4.0.1 cung cấp sửa lỗi quan trọng và bổ sung giao diện API   ┃
-┃  thống nhất (Unified UI), tăng tính ổn định của code.                           ┃
-┃  Cập nhật: pip install vnstock -U                                               ┃
-┃  AI Agent Guide: https://github.com/vnstock-hq/vnstock-agent-guide/             ┃
-┃                                                                                 ┃
-┃  ────────────────────────────────────────────────────────────────────────────── ┃
-┃                                                                                 ┃
-┃  🚀 VNSTOCK INSIDERS PROGRAM - NÂNG TẦM TRẢI NGHIỆM CỦA BẠN! 🚀                 ┃
-┃                                                                                 ┃
-┃  Nếu bạn cảm thấy khó chịu với các thông báo và quảng cáo:                      ┃
-┃                                                                                 ┃
-┃  ✨ Ẩn toàn bộ thông báo và quảng cáo phiền hà                                  ┃
-┃  🔓 Mở rộng khả năng sử dụng API tối đa                                         ┃
-┃  ⚡ Tăng tốc tải dữ liệu từ 5-8 lần                                              ┃
-┃  📈 Tăng giới hạn truy cập API lên đến 5 lần                                    ┃
-┃  🤖 Dùng AI Agent viết code hiệu quả với tài liệu Agent Guide                    ┃
-┃                                                                                 ┃
-┃  🔗 Tham gia ngay: https://vnstocks.com/insiders-program#tiers                  ┃
-┃                                                                                 ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-        time   open   high    low  close   volume
+============================================================        time   open   high    low  close   volume
 0 2023-12-14  69.16  69.59  68.72  69.45  1715423
 1 2023-12-15  69.45  69.52  68.58  69.45  1477484
 2 2023-12-18  69.23  69.45  67.64  67.86  2269177

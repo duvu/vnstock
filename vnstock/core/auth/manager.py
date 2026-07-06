@@ -234,15 +234,21 @@ class AuthManager:
             "store": store_diag,
         }
 
-    def auth_status_all(self, providers: list[str]) -> list[dict[str, Any]]:
+    def auth_status_all(
+        self, providers: list[str] | None = None
+    ) -> list[dict[str, Any]]:
         """Return safe auth status for multiple providers.
 
         Args:
-            providers: List of provider names.
+            providers: List of provider names.  When ``None`` (default),
+                returns status for the built-in auth-capable providers
+                (``tcbs`` and ``fmp``).
 
         Returns:
             List of status dicts (one per provider).
         """
+        if providers is None:
+            providers = ["tcbs", "fmp"]
         return [self.auth_status(p) for p in providers]
 
     # ------------------------------------------------------------------

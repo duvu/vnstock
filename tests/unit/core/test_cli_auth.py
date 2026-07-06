@@ -152,10 +152,11 @@ class TestCmdStatus:
             mock.auth_status.side_effect = lambda p: status_data.get(
                 p, {"authenticated": False, "provider": p}
             )
-            mock.auth_status_all.return_value = status_data
+            # auth_status_all() returns list[dict] in the updated API
+            mock.auth_status_all.return_value = list(status_data.values())
         else:
             mock.auth_status.return_value = {"authenticated": False, "provider": "tcbs"}
-            mock.auth_status_all.return_value = {}
+            mock.auth_status_all.return_value = []
         return mock
 
     def test_status_single_provider_unauthenticated(self):
